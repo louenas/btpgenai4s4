@@ -48,6 +48,22 @@ service btpgenai4s4Srv
             question,
             answer
         };
+
+        @odata.draft.enabled
+    entity ReportMessage as
+        projection on my.CustomerMessages
+        {
+            ID,
+            customerMessageID,
+            customerName,
+            productName,
+            titleCustomerLanguage,
+            customerId,
+            productId,
+            originatingCountry,
+            sourceLanguage,
+            fullMessageCustomerLanguage,
+        };
 }
 
 annotate btpgenai4s4Srv with @requires :
