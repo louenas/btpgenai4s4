@@ -32,7 +32,8 @@
     "generate-entry-point": "dev-cap-tools gen-entrypoint",
     "cds-watch": "cds watch --open",
     "watch-btpgenai4s4.customermessages": "cds watch --open btpgenai4s4.customermessages/webapp/index.html?sap-ui-xx-viewCache=false",
-    "watch-btpgenai4s4.productfaqsapp": "cds watch --open btpgenai4s4.productfaqsapp/webapp/index.html?sap-ui-xx-viewCache=false"
+    "watch-btpgenai4s4.productfaqsapp": "cds watch --open btpgenai4s4.productfaqsapp/webapp/index.html?sap-ui-xx-viewCache=false",
+    "watch-btpgenai4s4.reportaproductissue": "cds watch --open btpgenai4s4.reportaproductissue/webapp/index.html?sap-ui-xx-viewCache=false"
   },
   "cds": {
     "sql": {
@@ -70,6 +71,7 @@
   "lcap": true,
   "sapux": [
     "app/btpgenai4s4.customermessages",
-    "app/btpgenai4s4.productfaqsapp"
+    "app/btpgenai4s4.productfaqsapp",
+    "app/btpgenai4s4.reportaproductissue"
   ]
 }

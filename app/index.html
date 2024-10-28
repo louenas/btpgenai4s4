@@ -27,7 +27,7 @@
                     return Controller.extend("PreviewController", {
                         onInit: function () {
 
-                            const data = {"Services":[{"ServiceName":"btpgenai4s4Srv","DetailsURL":"./service/btpgenai4s4/","Metadata":"./service/btpgenai4s4/$metadata","Entities":[{"Name":"CustomerMessages","URL":"./service/btpgenai4s4/CustomerMessages","FioriURL":"$fiori-preview/btpgenai4s4Srv/CustomerMessages#preview-app"},{"Name":"A_ServiceOrder","URL":"./service/btpgenai4s4/A_ServiceOrder","FioriURL":"$fiori-preview/btpgenai4s4Srv/A_ServiceOrder#preview-app"},{"Name":"ProductFAQ","URL":"./service/btpgenai4s4/ProductFAQ","FioriURL":"$fiori-preview/btpgenai4s4Srv/ProductFAQ#preview-app"}],"EntitiesCount":3}]}
+                            const data = {"Services":[{"ServiceName":"btpgenai4s4Srv","DetailsURL":"./service/btpgenai4s4/","Metadata":"./service/btpgenai4s4/$metadata","Entities":[{"Name":"CustomerMessages","URL":"./service/btpgenai4s4/CustomerMessages","FioriURL":"$fiori-preview/btpgenai4s4Srv/CustomerMessages#preview-app"},{"Name":"A_ServiceOrder","URL":"./service/btpgenai4s4/A_ServiceOrder","FioriURL":"$fiori-preview/btpgenai4s4Srv/A_ServiceOrder#preview-app"},{"Name":"ProductFAQ","URL":"./service/btpgenai4s4/ProductFAQ","FioriURL":"$fiori-preview/btpgenai4s4Srv/ProductFAQ#preview-app"},{"Name":"ReportMessage","URL":"./service/btpgenai4s4/ReportMessage","FioriURL":"$fiori-preview/btpgenai4s4Srv/ReportMessage#preview-app"}],"EntitiesCount":4}]}
                             this.getView().setModel(new JSONModel(data));
                         }
                     });

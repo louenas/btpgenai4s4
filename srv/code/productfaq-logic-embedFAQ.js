@@ -30,10 +30,9 @@ module.exports = async function(results, request) {
 			answer
 		} = productFAQ;
 	
-		// Embed the concatenated issue, question, and answer text
+		// Generate the embedding for the concatenated issue, question, and answer text
 		let embedding;
 		try {
-			// Use getEmbedding to access the embedding vector
 			embedding = await generateEmbedding(request, `${issue} ${question} ${answer}`)
 			LOG.info("embedding", embedding);
 		} catch (error) {
@@ -41,16 +40,15 @@ module.exports = async function(results, request) {
 			return request.reject(500, 'Embedding service failed.');
 		}
 	
-		// Update the ProductFAQ entry with the new embedding
+		// Update the ProductFAQ entry with the generated embedding
 		await UPDATE('btpgenai4s4.ProductFAQ').set({ embedding: utils.array2VectorBuffer(embedding) }).where({ ID });
 	
 		LOG.info(`ProductFAQ with ID ${ID} updated with new embedding.`);
 	
 	} catch (err) {
-		// Log the error and send a response
+		// Log the error and send a response with appropriate details
 		LOG.error('An error occurred:', err.message);
 	
-		// Extract the root cause message if available
 		const message = err.rootCause?.message || err.message || 'An unexpected error occurred';
 		request.reject({
 			code: 'INTERNAL_SERVER_ERROR',
@@ -58,5 +56,5 @@ module.exports = async function(results, request) {
 			target: 'EmbedFAQs',
 			status: err.code || 500,
 		});
-	}
+	}	
 }
