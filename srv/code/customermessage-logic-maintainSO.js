@@ -14,10 +14,16 @@ module.exports = async function (request) {
 			return request.reject(400, 'ID parameter is missing.');
 		}
 
-		// Retrieve the CustomerMessage record based on the provided ID
-		const customerMessage = await SELECT.one.from('btpgenai4s4.CustomerMessages').where({ ID });
-		if (!customerMessage) {
-			return request.reject(400, `CustomerMessage with ID ${ID} not found.`);
+		let customerMessage;
+		try {
+			// Retrieve the CustomerMessage record based on the provided ID
+			customerMessage = await SELECT.one.from('btpgenai4s4.CustomerMessages').where({ ID });
+			if (!customerMessage) {
+				return request.reject(400, `CustomerMessage with ID ${ID} not found.`);
+			}
+		} catch (error) {
+			LOG.error('Failed to retrive customer message', error.message);
+			return request.reject(500, `Failed to retrive customer message with ID ${ID}`);
 		}
 
 		const { titleEnglish, fullMessageEnglish, suggestedResponseEnglish, S4HCP_ServiceOrder_ServiceOrder: attachedSOId } = customerMessage;
@@ -27,8 +33,14 @@ module.exports = async function (request) {
 			return request.reject(400, 'Customer message data is incomplete');
 		}
 
-		// Connect to the S4HCP Service Order OData service
-		const s4HcpServiceOrderOdata = await cds.connect.to('S4HCP_ServiceOrder_Odata');
+		let s4HcpServiceOrderOdata;
+		try {
+			// Connect to the S4HCP Service Order OData service
+			s4HcpServiceOrderOdata = await cds.connect.to('S4HCP_ServiceOrder_Odata');
+		} catch (error) {
+			LOG.error('Failed to connect to S/4HANA cloud OData Service Order:', error.message);
+			return request.reject(500, 'Failed to connect to S/4HANA cloud OData Service Order:');
+		}
 		const { A_ServiceOrder, A_ServiceOrderText } = s4HcpServiceOrderOdata.entities;
 
 		if (attachedSOId) {
@@ -44,7 +56,7 @@ module.exports = async function (request) {
 				);
 				LOG.info(`Created Service Order Note: ${JSON.stringify(finalNote)}`);
 			} catch (error) {
-				LOG.error('Error adding note to existing service order:', error.message);
+				LOG.error('Failed to add note to service order', error.message);
 				return request.reject(500, 'Failed to add note to service order');
 			}
 		} else {
@@ -88,7 +100,7 @@ module.exports = async function (request) {
 				// Insert the service order into the S4HCP system
 				serviceOrder = await s4HcpServiceOrderOdata.run(INSERT.into(A_ServiceOrder, servOrder));
 			} catch (error) {
-				LOG.error('Error creating service order:', error.message);
+				LOG.error('Failed to create service order.', error.message);
 				return request.reject(500, 'Failed to create service order.');
 			}
 
@@ -100,12 +112,11 @@ module.exports = async function (request) {
 				await UPDATE('btpgenai4s4.CustomerMessages')
 					.set({ S4HCP_ServiceOrder_ServiceOrder: soId })
 					.where({ ID });
+					LOG.info(`Updated customer message with Service Order Id: ${soId}`);
 			} catch (error) {
-				LOG.error('Error updating customer message with service order ID:', error.message);
-				return request.reject(500, 'Failed to update customer message.');
+				LOG.error('Failed to update customer message', error.message);
+				return request.reject(500, `Failed to update customer message for service order ID ${soId}`);
 			}
-
-			LOG.info(`Updated customer message with Service Order Id: ${soId}`);
 		}
 
 	} catch (err) {

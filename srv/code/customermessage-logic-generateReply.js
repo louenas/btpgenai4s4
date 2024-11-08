@@ -10,29 +10,35 @@ const SIMILARITY_THRESHOLD = 0.45;
  * @On(event = { "Action1" }, entity = "btpgenai4s4Srv.CustomerMessages")
  * @param {Object} request - User information, tenant-specific CDS model, headers and query parameters
 */
-module.exports = async function(request) {
+module.exports = async function (request) {
 	try {
 		const { ID } = request.params[0] || {};
 		// Check if the ID parameter is provided
 		if (!ID) {
 			return request.reject(400, 'ID parameter is missing.');
 		}
-	
-		// Retrieve the CustomerMessage record based on the provided ID
-		const customerMessage = await SELECT.one.from('btpgenai4s4.CustomerMessages').where({ ID });
-		if (!customerMessage) {
-			throw new Error(`CustomerMessage with ID ${ID} not found.`);
+
+		let customerMessage;
+		try {
+			// Retrieve the CustomerMessage record based on the provided ID
+			customerMessage = await SELECT.one.from('btpgenai4s4.CustomerMessages').where({ ID });
+			if (!customerMessage) {
+				throw new Error(`CustomerMessage with ID ${ID} not found.`);
+			}
+		} catch (error) {
+			LOG.error('Failed to retrieve customer message', error.message);
+			return request.reject(500, `Failed to retrieve customer message with ID ${ID}`);
 		}
-		
+
 		const { fullMessageCustomerLanguage, messageCategory, messageSentiment, S4HC_ServiceOrder_ServiceOrder: attachedSOId } = customerMessage;
-	
+
 		let soContext = '';
 		if (attachedSOId) {
 			try {
 				// Connect to the S4HCP Service Order OData service
 				const s4HcpServiceOrderOdata = await cds.connect.to('S4HCP_ServiceOrder_Odata');
 				const { A_ServiceOrder } = s4HcpServiceOrderOdata.entities;
-	
+
 				// Fetch service order details, including long text notes
 				const s4hcSO = await s4HcpServiceOrderOdata.run(
 					SELECT.from(A_ServiceOrder, so => {
@@ -42,7 +48,7 @@ module.exports = async function(request) {
 						});
 					}).where({ ServiceOrder: attachedSOId })
 				);
-	
+
 				if (s4hcSO && s4hcSO.length > 0) {
 					const serviceOrder = s4hcSO[0];
 					const notes = serviceOrder.to_Text || [];
@@ -58,7 +64,7 @@ module.exports = async function(request) {
 		} else {
 			LOG.warn('No or Invalid attachedSOId provided.');
 		}
-	
+
 		let resultJSON;
 		if (messageCategory === 'Technical') {
 			let fullMessageEmbedding;
@@ -69,12 +75,18 @@ module.exports = async function(request) {
 				LOG.error('Embedding service failed', err);
 				return request.reject(500, 'Embedding service failed');
 			}
-	
-			// Retrieve relevant FAQ items based on the similarity with the generated embedding
-			const relevantFAQs = await SELECT.from('btpgenai4s4.ProductFAQ')
-				.columns('ID', 'issue', 'question', 'answer')
-				.where`cosine_similarity(embedding, to_real_vector(${fullMessageEmbedding})) > ${SIMILARITY_THRESHOLD}`;
-			
+
+			let relevantFAQs;
+			try {
+				// Retrieve relevant FAQ items based on the similarity with the generated embedding
+				relevantFAQs = await SELECT.from('btpgenai4s4.ProductFAQ')
+					.columns('ID', 'issue', 'question', 'answer')
+					.where`cosine_similarity(embedding, to_real_vector(${fullMessageEmbedding})) > ${SIMILARITY_THRESHOLD}`;
+			} catch (error) {
+				LOG.error('Failed to retrieve FAQ items', error.message);
+				return request.reject(500, 'Failed to retrieve FAQ items');
+			}
+
 			const faqItem = (relevantFAQs && relevantFAQs.length > 0) ? relevantFAQs[0] : { issue: '', question: '', answer: '' };
 			try {
 				// Generate response for the technical message using the FAQ item and service order context
@@ -92,20 +104,24 @@ module.exports = async function(request) {
 				return request.reject(500, 'Completion service failed');
 			}
 		}
-	
+
 		const { suggestedResponseCustomerLanguage, suggestedResponseEnglish } = resultJSON;
 		// Ensure the generated responses are valid before updating the record
 		if (!suggestedResponseCustomerLanguage || !suggestedResponseEnglish) {
 			return request.reject(500, 'Completion service failed. Generated responses are invalid');
 		}
-	
-		// Update the CustomerMessage with the generated responses
-		await UPDATE('btpgenai4s4.CustomerMessages').set({
-			suggestedResponseCustomerLanguage,
-			suggestedResponseEnglish,
-		}).where({ ID });
-	
-		LOG.info(`CustomerMessage with ID ${ID} updated with a reply to the customer.`);
+
+		try {
+			// Update the CustomerMessage with the generated responses
+			await UPDATE('btpgenai4s4.CustomerMessages').set({
+				suggestedResponseCustomerLanguage,
+				suggestedResponseEnglish,
+			}).where({ ID });
+			LOG.info(`CustomerMessage with ID ${ID} updated with a reply to the customer.`);
+		} catch (error) {
+			LOG.error('Failed to update customer message', error.message);
+			return request.reject(500, `Failed to update customer message with ID ${ID}`);
+		}
 	} catch (err) {
 		// Log and handle unexpected errors
 		LOG.error('An error occurred:', err.message);
@@ -115,5 +131,5 @@ module.exports = async function(request) {
 			target: 'GenerateReply',
 			status: err.code || 500,
 		});
-	}	
+	}
 }
