@@ -9,8 +9,15 @@ const { preprocessCustomerMassage } = require('./genai/orchestration');
 */
 module.exports = async function (request) {
 	try {
-		// Fetch all customer messages for processing
-		const customerMessages = await SELECT.from('btpgenai4s4.CustomerMessages').forUpdate();
+
+		let customerMessages;
+		try {
+			// Fetch all customer messages for processing
+			customerMessages = await SELECT.from('btpgenai4s4.CustomerMessages').forUpdate();
+		} catch (error) {
+			LOG.error('Failed to retrive customer messages', error.message);
+			return request.reject(500, 'Failed to retrive customer messages');
+		}
 
 		// Process each customer message concurrently using Promise.all
 		await Promise.all(customerMessages.map(async customerMessage => {
@@ -62,6 +69,7 @@ module.exports = async function (request) {
 					LOG.info(`CustomerMessage with ID ${ID} updated`);
 				} catch (updateError) {
 					LOG.error(`Error updating CustomerMessage ID ${ID}: ${updateError.message}`);
+					return;  // Skip this message and proceed to the next
 				}
 			} else {
 				LOG.info(`CustomerMessage ID ${ID} already processed`);
