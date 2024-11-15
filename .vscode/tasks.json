@@ -21,22 +21,6 @@
       }
     },
     {
-      "label": "PreLaunchTask for Run btpgenai4s4",
-      "type": "process",
-      "command": "npx",
-      "args": [
-        "dev-cap-tools",
-        "gen-entrypoint"
-      ],
-      "dependsOn": [
-        "BuildMDK",
-        "DeployToHANADB:.env1"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      }
-    },
-    {
       "label": "checkPort4004",
       "type": "shell",
       "command": "if lsof -i :4004 >/dev/null 2>&1; then echo ' A debugger has been started!';exit 1; else exit 0; fi",
@@ -93,6 +77,22 @@
       ],
       "options": {
         "cwd": "${workspaceFolder}/"
+      }
+    },
+    {
+      "label": "PreLaunchTask for Run btpgenai4s4",
+      "type": "process",
+      "command": "npx",
+      "args": [
+        "dev-cap-tools",
+        "gen-entrypoint"
+      ],
+      "dependsOn": [
+        "BuildMDK",
+        "DeployToHANADB:.env1"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
       }
     }
   ]

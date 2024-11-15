@@ -13,7 +13,7 @@ module.exports = async function (request) {
 		let customerMessages;
 		try {
 			// Fetch all customer messages for processing
-			customerMessages = await SELECT.from('btpgenai4s4.CustomerMessages').forUpdate();
+			customerMessages = await SELECT.from('btpgenai4s4.CustomerMessage').forUpdate();
 		} catch (error) {
 			LOG.error('Failed to retrive customer messages', error.message);
 			return request.reject(500, 'Failed to retrive customer messages');
@@ -63,7 +63,7 @@ module.exports = async function (request) {
 
 				try {
 					// Update the customer message with preprocessed data
-					await UPDATE('btpgenai4s4.CustomerMessages')
+					await UPDATE('btpgenai4s4.CustomerMessage')
 						.set({ fullMessageEnglish, titleEnglish, summaryCustomerLanguage, summaryEnglish, messageCategory, messageUrgency, messageSentiment })
 						.where({ ID });
 					LOG.info(`CustomerMessage with ID ${ID} updated`);

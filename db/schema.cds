@@ -4,7 +4,7 @@ using { S4HCP_ServiceOrder_Odata } from '../srv/external/S4HCP_ServiceOrder_Odat
 
 using { cuid } from '@sap/cds/common';
 
-entity CustomerMessages : cuid
+entity CustomerMessage : cuid
 {
     customerMessageID : Integer
         @mandatory;
