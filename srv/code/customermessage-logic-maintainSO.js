@@ -2,7 +2,7 @@ const cds = require('@sap/cds');
 const LOG = cds.log('GenAI');
 
 /**
- * 
+ *  
  * @On(event = { "Action2" }, entity = "btpgenai4s4Srv.CustomerMessages")
  * @param {Object} request - User information, tenant-specific CDS model, headers and query parameters
 */
