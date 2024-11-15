@@ -7,7 +7,7 @@ service btpgenai4s4Srv
 {
     @odata.draft.enabled
     entity CustomerMessages as
-        projection on my.CustomerMessages
+        projection on my.CustomerMessage
         actions
         {
             @cds.odata.bindingparameter.name : '_it'
@@ -51,7 +51,7 @@ service btpgenai4s4Srv
 
         @odata.draft.enabled
     entity ReportMessage as
-        projection on my.CustomerMessages
+        projection on my.CustomerMessage
         {
             ID,
             customerMessageID,

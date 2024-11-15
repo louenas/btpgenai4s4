@@ -21,7 +21,7 @@ module.exports = async function (request) {
 		let customerMessage;
 		try {
 			// Retrieve the CustomerMessage record based on the provided ID
-			customerMessage = await SELECT.one.from('btpgenai4s4.CustomerMessages').where({ ID });
+			customerMessage = await SELECT.one.from('btpgenai4s4.CustomerMessage').where({ ID });
 			if (!customerMessage) {
 				throw new Error(`CustomerMessage with ID ${ID} not found.`);
 			}
@@ -30,7 +30,7 @@ module.exports = async function (request) {
 			return request.reject(500, `Failed to retrieve customer message with ID ${ID}`);
 		}
 
-		const { fullMessageCustomerLanguage, messageCategory, messageSentiment, S4HC_ServiceOrder_ServiceOrder: attachedSOId } = customerMessage;
+		const { fullMessageCustomerLanguage, messageCategory, messageSentiment, S4HCP_ServiceOrder_ServiceOrder: attachedSOId } = customerMessage;
 
 		let soContext = '';
 		if (attachedSOId) {
@@ -113,7 +113,7 @@ module.exports = async function (request) {
 
 		try {
 			// Update the CustomerMessage with the generated responses
-			await UPDATE('btpgenai4s4.CustomerMessages').set({
+			await UPDATE('btpgenai4s4.CustomerMessage').set({
 				suggestedResponseCustomerLanguage,
 				suggestedResponseEnglish,
 			}).where({ ID });

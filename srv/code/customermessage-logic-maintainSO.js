@@ -17,7 +17,7 @@ module.exports = async function (request) {
 		let customerMessage;
 		try {
 			// Retrieve the CustomerMessage record based on the provided ID
-			customerMessage = await SELECT.one.from('btpgenai4s4.CustomerMessages').where({ ID });
+			customerMessage = await SELECT.one.from('btpgenai4s4.CustomerMessage').where({ ID });
 			if (!customerMessage) {
 				return request.reject(400, `CustomerMessage with ID ${ID} not found.`);
 			}
@@ -109,7 +109,7 @@ module.exports = async function (request) {
 
 			try {
 				// Update the CustomerMessage record with the created service order ID
-				await UPDATE('btpgenai4s4.CustomerMessages')
+				await UPDATE('btpgenai4s4.CustomerMessage')
 					.set({ S4HCP_ServiceOrder_ServiceOrder: soId })
 					.where({ ID });
 					LOG.info(`Updated customer message with Service Order Id: ${soId}`);
