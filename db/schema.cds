@@ -28,6 +28,11 @@ entity CustomerMessage : cuid
     S4HCP_ServiceOrder : Association to one S4HCP_ServiceOrder_Odata.A_ServiceOrder;
 }
 
+annotate CustomerMessage with @assert.unique :
+{
+    customerMessageID : [ customerMessageID ],
+};
+
 entity ProductFAQ
 {
     key ID : Integer;
@@ -37,8 +42,4 @@ entity ProductFAQ
     embedding : Vector(1536);
 }
 
-annotate CustomerMessages with @assert.unique :
-{
-    customerMessageID : [ customerMessageID ],
-};
 
