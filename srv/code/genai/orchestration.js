@@ -71,11 +71,12 @@ async function preprocessCustomerMassage(titleCustomerLanguage, fullMessageCusto
     Translate fullMessageCustomerLanguage to English and put it in fullMessageEnglish.
     Summarize fullMessageCustomerLanguage into 20 words max and keep the original language and put it in summaryCustomerLanguage. 
     Translate the summaryCustomerLanguage to English and put it in summaryEnglish.
-    Translate the titleCustomerLanguage to English and put it in titleEnglish.
-    Return the result in the following JSON template:
+    Translate the titleCustomerLanguage to English and put it in titleEnglish. 
+    Here is the titleCustomerLanguage and fullMessageCustomerLanguage:
     titleCustomerLanguage: {{?titleCustomerLanguage}}
     fullMessageCustomerLanguage: {{?fullMessageCustomerLanguage}}
-    JSON template: {
+    Return the result in the following JSON template:
+    {
         fullMessageEnglish: Text,
         titleEnglish: Text, 
         summaryCustomerLanguage: Text, 
@@ -105,7 +106,7 @@ async function generateResponseTechMessage(issue, question, answer, fullMessageC
     newCustomerMessage: {{?fullMessageCustomerLanguage}}
     previousCustomerMessages: {{?soContext}}
     Produce the reply in two languages: in the original language of newCustomerMessage and in English. Return the result in the following JSON template:
-    JSON template: {
+    {
         suggestedResponseEnglish: Text,
         suggestedResponseCustomerLanguage: Text
     }`;
@@ -130,11 +131,11 @@ async function generateResponseOtherMessage(messageSentiment, fullMessageCustome
     // Determine message type based on customer sentiment (either an apology or a thank you note)
     const messageType = messageSentiment === 'Negative' ? 'a "we are sorry" note' : 'a gratitude note';
     const prompt = `
-    Generate {{?messageType}} to the newCustomerMessage:
+    Generate {{?messageType}} to the newCustomerMessage base on prevoiuse customer messages previousCustomerMessages. 
     newCustomerMessage: {{?fullMessageCustomerLanguage}}
     previousCustomerMessages: {{?soContext}}
     Produce the reply in two languages: in the original language of newCustomerMessage and in English. Return the result in the following JSON template:
-    JSON template: {
+    {
         suggestedResponseEnglish: Text,
         suggestedResponseCustomerLanguage: Text
     }`;
@@ -160,5 +161,3 @@ module.exports = {
     generateResponseTechMessage, 
     generateResponseOtherMessage,
 };
-
-

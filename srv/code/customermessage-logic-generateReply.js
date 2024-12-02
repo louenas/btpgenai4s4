@@ -17,7 +17,7 @@ module.exports = async function (request) {
 		if (!ID) {
 			return request.reject(400, 'ID parameter is missing.');
 		}
-
+	
 		let customerMessage;
 		try {
 			// Retrieve the CustomerMessage record based on the provided ID
@@ -29,16 +29,16 @@ module.exports = async function (request) {
 			LOG.error('Failed to retrieve customer message', error.message);
 			return request.reject(500, `Failed to retrieve customer message with ID ${ID}`);
 		}
-
+	
 		const { fullMessageCustomerLanguage, messageCategory, messageSentiment, S4HCP_ServiceOrder_ServiceOrder: attachedSOId } = customerMessage;
-
+	
 		let soContext = '';
 		if (attachedSOId) {
 			try {
 				// Connect to the S4HCP Service Order OData service
 				const s4HcpServiceOrderOdata = await cds.connect.to('S4HCP_ServiceOrder_Odata');
 				const { A_ServiceOrder } = s4HcpServiceOrderOdata.entities;
-
+	
 				// Fetch service order details, including long text notes
 				const s4hcSO = await s4HcpServiceOrderOdata.run(
 					SELECT.from(A_ServiceOrder, so => {
@@ -48,7 +48,7 @@ module.exports = async function (request) {
 						});
 					}).where({ ServiceOrder: attachedSOId })
 				);
-
+	
 				if (s4hcSO && s4hcSO.length > 0) {
 					const serviceOrder = s4hcSO[0];
 					const notes = serviceOrder.to_Text || [];
@@ -64,7 +64,7 @@ module.exports = async function (request) {
 		} else {
 			LOG.warn('No or Invalid attachedSOId provided.');
 		}
-
+	
 		let resultJSON;
 		if (messageCategory === 'Technical') {
 			let fullMessageEmbedding;
@@ -75,7 +75,7 @@ module.exports = async function (request) {
 				LOG.error('Embedding service failed', err);
 				return request.reject(500, 'Embedding service failed');
 			}
-
+	
 			let relevantFAQs;
 			try {
 				// Retrieve relevant FAQ items based on the similarity with the generated embedding
@@ -86,7 +86,7 @@ module.exports = async function (request) {
 				LOG.error('Failed to retrieve FAQ items', error.message);
 				return request.reject(500, 'Failed to retrieve FAQ items');
 			}
-
+	
 			const faqItem = (relevantFAQs && relevantFAQs.length > 0) ? relevantFAQs[0] : { issue: '', question: '', answer: '' };
 			try {
 				// Generate response for the technical message using the FAQ item and service order context
@@ -104,13 +104,13 @@ module.exports = async function (request) {
 				return request.reject(500, 'Completion service failed');
 			}
 		}
-
+	
 		const { suggestedResponseCustomerLanguage, suggestedResponseEnglish } = resultJSON;
 		// Ensure the generated responses are valid before updating the record
 		if (!suggestedResponseCustomerLanguage || !suggestedResponseEnglish) {
 			return request.reject(500, 'Completion service failed. Generated responses are invalid');
 		}
-
+	
 		try {
 			// Update the CustomerMessage with the generated responses
 			await UPDATE('btpgenai4s4.CustomerMessage').set({
