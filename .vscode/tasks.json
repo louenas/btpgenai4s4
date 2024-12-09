@@ -85,7 +85,11 @@
       "command": "npx",
       "args": [
         "dev-cap-tools",
-        "gen-entrypoint"
+        "gen-entrypoint",
+        "--ui5version",
+        "1.131.0",
+        "--ui5theme",
+        "sap_belize"
       ],
       "dependsOn": [
         "BuildMDK",
