@@ -10,5 +10,3 @@ This is the final app following an implementation script handed to the workshop 
 - you also need access to and HDI container from HANA Cloud  
 - you need a destination to S/4HANA Cloud Service Order service
 - for convinience, you may need some good sample data
-
-- test
