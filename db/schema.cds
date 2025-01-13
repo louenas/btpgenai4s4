@@ -4,7 +4,7 @@ using { S4HCP_ServiceOrder_Odata } from '../srv/external/S4HCP_ServiceOrder_Odat
 
 using { cuid, managed } from '@sap/cds/common';
 
-using { Attachments } from '@cap-js/attachments';
+//using { Attachments } from '@cap-js/attachments';
 
 entity CustomerMessage : cuid, managed
 {
@@ -28,7 +28,7 @@ entity CustomerMessage : cuid, managed
     suggestedResponseEnglish : String(5000);
     suggestedResponseCustomerLanguage : String(5000);
     S4HCP_ServiceOrder : Association to one S4HCP_ServiceOrder_Odata.A_ServiceOrder;
-    attachments: Composition of many Attachments;
+    //attachments: Composition of many Attachments;
 }
 
 annotate CustomerMessage with @assert.unique :
@@ -42,7 +42,7 @@ entity ProductFAQ
     issue : LargeString;
     question : LargeString;
     answer : LargeString;
-    //embedding : Vector(1536);
+    embedding : Vector(1536);
 }
 
 
