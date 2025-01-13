@@ -81,7 +81,7 @@ annotate service.CustomerMessages with @(
                 $Type : 'UI.DataFieldWithUrl',
                 Value : S4HCP_ServiceOrder_ServiceOrder,
                 Label : 'Service Order',
-                Url : 'https://my301832-api.s4hana.ondemand.com/sap/opu/odata/sap/API_SERVICE_ORDER_SRV/A_ServiceOrder(''{S4HCP_ServiceOrder_ServiceOrder}'')'
+                Url : 'https://my300436-api.s4hana.ondemand.com/sap/opu/odata/sap/API_SERVICE_ORDER_SRV/A_ServiceOrder(''{S4HCP_ServiceOrder_ServiceOrder}'')'
             },
         ],
     },

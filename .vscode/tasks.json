@@ -87,9 +87,9 @@
         "dev-cap-tools",
         "gen-entrypoint",
         "--ui5version",
-        "1.131.0",
+        "1.131.1",
         "--ui5theme",
-        "sap_belize"
+        "sap_fiori_3"
       ],
       "dependsOn": [
         "BuildMDK",
