@@ -71,6 +71,16 @@ annotate service.CustomerMessages with @(
             },
             {
                 $Type : 'UI.DataField',
+                Value : imageLLMDescription,
+                Label : 'imageLLMDescription',
+            },
+            {
+                $Type : 'UI.DataField',
+                Value : imageMatchingUserDescription,
+                Label : 'imageMatchingUserDescription',
+            },
+            {
+                $Type : 'UI.DataField',
                 Value : suggestedResponseEnglish,
             },
             {

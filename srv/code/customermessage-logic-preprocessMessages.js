@@ -9,7 +9,6 @@ const { preprocessCustomerMassage } = require('./genai/orchestration');
 */
 module.exports = async function (request) {
 	try {
-
 		let customerMessages;
 		try {
 			// Fetch all customer messages for processing

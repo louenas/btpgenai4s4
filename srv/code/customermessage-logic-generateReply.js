@@ -17,7 +17,7 @@ module.exports = async function (request) {
 		if (!ID) {
 			return request.reject(400, 'ID parameter is missing.');
 		}
-	
+
 		let customerMessage;
 		try {
 			// Retrieve the CustomerMessage record based on the provided ID
@@ -30,8 +30,8 @@ module.exports = async function (request) {
 			return request.reject(500, `Failed to retrieve customer message with ID ${ID}`);
 		}
 	
-		const { fullMessageCustomerLanguage, messageCategory, messageSentiment, S4HCP_ServiceOrder_ServiceOrder: attachedSOId } = customerMessage;
-	
+		const { messageCategory, messageSentiment, fullMessageEnglish, imageAboutFreezers, imageMatchingUserDescription, imageLLMDescription, S4HCP_ServiceOrder_ServiceOrder: attachedSOId } = customerMessage;
+
 		let soContext = '';
 		if (attachedSOId) {
 			try {
@@ -66,11 +66,16 @@ module.exports = async function (request) {
 		}
 	
 		let resultJSON;
+		let customerInputContext;
+		if(imageAboutFreezers === "yes" && imageMatchingUserDescription === "yes")
+			customerInputContext = fullMessageEnglish + " " + imageLLMDescription;
+		else 
+			customerInputContext = fullMessageEnglish;
+		
 		if (messageCategory === 'Technical') {
-			let fullMessageEmbedding;
 			try {
 				// Generate embedding for the technical message
-				fullMessageEmbedding = await generateEmbedding(request, fullMessageCustomerLanguage);
+				customerInputContextEmbedding = await generateEmbedding(request, customerInputContext);
 			} catch (err) {
 				LOG.error('Embedding service failed', err);
 				return request.reject(500, 'Embedding service failed');
@@ -81,16 +86,16 @@ module.exports = async function (request) {
 				// Retrieve relevant FAQ items based on the similarity with the generated embedding
 				relevantFAQs = await SELECT.from('btpgenai4s4.ProductFAQ')
 					.columns('ID', 'issue', 'question', 'answer')
-					.where`cosine_similarity(embedding, to_real_vector(${fullMessageEmbedding})) > ${SIMILARITY_THRESHOLD}`;
+					.where`cosine_similarity(embedding, to_real_vector(${customerInputContextEmbedding})) > ${SIMILARITY_THRESHOLD}`;
 			} catch (error) {
 				LOG.error('Failed to retrieve FAQ items', error.message);
-				return request.reject(500, 'Failed to retrieve FAQ items');
+				//return request.reject(500, 'Failed to retrieve FAQ items');
 			}
 	
 			const faqItem = (relevantFAQs && relevantFAQs.length > 0) ? relevantFAQs[0] : { issue: '', question: '', answer: '' };
 			try {
 				// Generate response for the technical message using the FAQ item and service order context
-				resultJSON = await generateResponseTechMessage(faqItem.issue, faqItem.question, faqItem.answer, fullMessageCustomerLanguage, soContext);
+				resultJSON = await generateResponseTechMessage(faqItem.issue, faqItem.question, faqItem.answer, customerInputContext, soContext);
 			} catch (err) {
 				LOG.error('Completion service failed', err);
 				return request.reject(500, 'Completion service failed');
@@ -98,7 +103,7 @@ module.exports = async function (request) {
 		} else {
 			try {
 				// Generate response for non-technical messages, including service order context
-				resultJSON = await generateResponseOtherMessage(messageSentiment, fullMessageCustomerLanguage, soContext);
+				resultJSON = await generateResponseOtherMessage(messageSentiment, customerInputContext, soContext);
 			} catch (err) {
 				LOG.error('Completion service failed', err);
 				return request.reject(500, 'Completion service failed');
