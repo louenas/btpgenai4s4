@@ -63,6 +63,7 @@ service btpgenai4s4Srv
             originatingCountry,
             sourceLanguage,
             fullMessageCustomerLanguage,
+            attachments
         };
 }
 

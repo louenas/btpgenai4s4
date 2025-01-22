@@ -3,14 +3,13 @@ const LOG = cds.log('GenAI');
 
 // Configuration object for the LLM, specifying model name and parameters.
 const LLM_CONFIG = {
-  model_name: 'gpt-4o-mini',
-  model_params: {
-    max_tokens: 2048,
-    temperature: 0.1,
-    response_format: {
-      type: 'json_object',
-    },
-  }
+    model_name: 'gpt-4o-mini',
+    model_params: {
+        temperature: 0.1,
+        response_format: {
+            type: 'json_object',
+        },
+    }
 };
 
 // System message to set the context for the LLM.
@@ -25,6 +24,36 @@ async function createOrchestrationClient(prompt) {
             template: [
                 SYSTEM_MESSAGE,
                 { role: 'user', content: prompt }
+            ]
+        },
+        filtering: {
+            input: buildAzureContentFilter({ SelfHarm: 0 })
+        }
+    });
+}
+
+// Function to create an orchestration client for image analysis using the specified prompt.
+async function createOrchestrationClientForImageAnalysis(prompt) {
+    const { OrchestrationClient, buildAzureContentFilter } = await import('@sap-ai-sdk/orchestration');
+    return new OrchestrationClient({
+        llm: LLM_CONFIG,
+        templating: {
+            template: [
+                {
+                    role: 'user',
+                    content: [
+                        {
+                            type: 'text',
+                            text: `${prompt}`,
+                        },
+                        {
+                            type: 'image_url',
+                            image_url: {
+                                url: '{{?imageUrl}}'
+                            }
+                        }
+                    ]
+                }
             ]
         },
         filtering: {
@@ -98,12 +127,12 @@ async function preprocessCustomerMassage(titleCustomerLanguage, fullMessageCusto
     }
 }
 
-async function generateResponseTechMessage(issue, question, answer, fullMessageCustomerLanguage, soContext) {
+async function generateResponseTechMessage(issue, question, answer, fullMessageEnglishAndImageDescription, soContext) {
     // Define a prompt that provides the context for generating a technical response
     const prompt = `
     Generate a helpful reply message including the troubleshooting procedure to the newCustomerMessage based on previousCustomerMessages and relevantFAQItem:
     relevantFAQItem: issue - {{?issue}}, Question - {{?question}} and Answer - {{?answer}}
-    newCustomerMessage: {{?fullMessageCustomerLanguage}}
+    newCustomerMessage: {{?fullMessageEnglishAndImageDescription}}
     previousCustomerMessages: {{?soContext}}
     Produce the reply in two languages: in the original language of newCustomerMessage and in English. Return the result in the following JSON template:
     {
@@ -116,7 +145,7 @@ async function generateResponseTechMessage(issue, question, answer, fullMessageC
         const orchestrationClient = await createOrchestrationClient(prompt);
         // Get the response by providing the required input parameters
         const response = await orchestrationClient.chatCompletion({
-            inputParams: { issue, question, answer, fullMessageCustomerLanguage, soContext }
+            inputParams: { issue, question, answer, fullMessageEnglishAndImageDescription, soContext }
         });
         // Parse and return the generated response in JSON format
         return JSON.parse(response.getContent());
@@ -127,12 +156,12 @@ async function generateResponseTechMessage(issue, question, answer, fullMessageC
     }
 }
 
-async function generateResponseOtherMessage(messageSentiment, fullMessageCustomerLanguage, soContext) {
+async function generateResponseOtherMessage(messageSentiment, fullMessageEnglishAndImageDescription, soContext) {
     // Determine message type based on customer sentiment (either an apology or a thank you note)
     const messageType = messageSentiment === 'Negative' ? 'a "we are sorry" note' : 'a gratitude note';
     const prompt = `
     Generate {{?messageType}} to the newCustomerMessage base on prevoiuse customer messages previousCustomerMessages. 
-    newCustomerMessage: {{?fullMessageCustomerLanguage}}
+    newCustomerMessage: {{?fullMessageEnglishAndImageDescription}}
     previousCustomerMessages: {{?soContext}}
     Produce the reply in two languages: in the original language of newCustomerMessage and in English. Return the result in the following JSON template:
     {
@@ -145,7 +174,7 @@ async function generateResponseOtherMessage(messageSentiment, fullMessageCustome
         const orchestrationClient = await createOrchestrationClient(prompt);
         // Get the response by providing the required input parameters
         const response = await orchestrationClient.chatCompletion({
-            inputParams: { messageType, fullMessageCustomerLanguage, soContext }
+            inputParams: { messageType, fullMessageEnglishAndImageDescription, soContext }
         });
         // Parse and return the generated response in JSON format
         return JSON.parse(response.getContent());
@@ -156,8 +185,23 @@ async function generateResponseOtherMessage(messageSentiment, fullMessageCustome
     }
 }
 
+async function analyseImage(imageBase64, customerIssueImageDescription) {
+    const prompt = `Generate a description of the image in English and put it in the field imageLLMDescription. If the image is not about freezers then retrun JSON {imageAboutFreezers: no}.
+                    If the image description is completly unrelated to the issue description subimted by the customer {{?customerIssueImageDescription}} then return JSON {imageAboutFreezers: yes, imageMatchingUserDescription: no, imageLLMDescription: Text}
+                    Otherwise return JSON {imageAboutFreezers: yes, imageMatchingUserDescription: yes, imageLLMDescription: Text}`;
+
+    const orchestrationClient = await createOrchestrationClientForImageAnalysis(prompt);
+
+    const response = await orchestrationClient.chatCompletion({
+        inputParams: { imageUrl: 'data:image/jpeg;base64,' + imageBase64, customerIssueImageDescription }
+    });
+
+    return JSON.parse(response.getContent());
+};
+
 module.exports = {
-    preprocessCustomerMassage, 
-    generateResponseTechMessage, 
+    preprocessCustomerMassage,
+    generateResponseTechMessage,
     generateResponseOtherMessage,
+    analyseImage,
 };
