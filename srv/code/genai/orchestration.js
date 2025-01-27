@@ -39,6 +39,7 @@ async function createOrchestrationClientForImageAnalysis(prompt) {
         llm: LLM_CONFIG,
         templating: {
             template: [
+                SYSTEM_MESSAGE,
                 {
                     role: 'user',
                     content: [
@@ -127,6 +128,7 @@ async function preprocessCustomerMassage(titleCustomerLanguage, fullMessageCusto
     }
 }
 
+// generate a response for customer technical messages
 async function generateResponseTechMessage(issue, question, answer, fullMessageEnglishAndImageDescription, soContext) {
     // Define a prompt that provides the context for generating a technical response
     const prompt = `
@@ -156,11 +158,12 @@ async function generateResponseTechMessage(issue, question, answer, fullMessageE
     }
 }
 
+// generate a response for customer non-technical messages
 async function generateResponseOtherMessage(messageSentiment, fullMessageEnglishAndImageDescription, soContext) {
     // Determine message type based on customer sentiment (either an apology or a thank you note)
     const messageType = messageSentiment === 'Negative' ? 'a "we are sorry" note' : 'a gratitude note';
     const prompt = `
-    Generate {{?messageType}} to the newCustomerMessage base on prevoiuse customer messages previousCustomerMessages. 
+    Generate {{?messageType}} to the newCustomerMessage based on previous customer messages previousCustomerMessages. 
     newCustomerMessage: {{?fullMessageEnglishAndImageDescription}}
     previousCustomerMessages: {{?soContext}}
     Produce the reply in two languages: in the original language of newCustomerMessage and in English. Return the result in the following JSON template:
@@ -185,15 +188,19 @@ async function generateResponseOtherMessage(messageSentiment, fullMessageEnglish
     }
 }
 
-async function analyseImage(imageBase64, customerIssueImageDescription) {
-    const prompt = `Generate a description of the image in English and put it in the field imageLLMDescription. If the image is not about freezers then retrun JSON {imageAboutFreezers: no}.
-                    If the image description is completly unrelated to the issue description subimted by the customer {{?customerIssueImageDescription}} then return JSON {imageAboutFreezers: yes, imageMatchingUserDescription: no, imageLLMDescription: Text}
-                    Otherwise return JSON {imageAboutFreezers: yes, imageMatchingUserDescription: yes, imageLLMDescription: Text}`;
+// analyse the generated the description of the issue's image
+async function analyseImage(imageBase64, customerIssueDescription) {
+    const prompt = `
+    This is the issue description submitted by the customer {{?customerIssueDescription}}.
+    Generate a description in English of the submitted image and put it in the field imageLLMDescription.
+    If the image is not about freezers then return the JSON {imageAboutFreezers: no}.
+    if the issue description submitted by the customer matches the image then return the JSON {imageAboutFreezers: yes, imageMatchingUserDescription: yes, imageLLMDescription: Text}.                
+    Otherwise return the JSON {imageAboutFreezers: yes, imageMatchingUserDescription: no, imageLLMDescription: Text}`;
 
     const orchestrationClient = await createOrchestrationClientForImageAnalysis(prompt);
 
     const response = await orchestrationClient.chatCompletion({
-        inputParams: { imageUrl: 'data:image/jpeg;base64,' + imageBase64, customerIssueImageDescription }
+        inputParams: { imageUrl: 'data:image/jpeg;base64,' + imageBase64, customerIssueDescription }
     });
 
     return JSON.parse(response.getContent());

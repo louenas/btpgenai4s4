@@ -2,130 +2,108 @@ const cds = require('@sap/cds');
 const LOG = cds.log('GenAI');
 
 const { analyseImage } = require('./genai/orchestration');
+const { getBase64Content } = require('./genai/utils');
 
 /**
- * 
- * @param {*} contentStream  Base64-encoded image
- * @returns 
- */
-async function getBase64Content(contentStream) {
-	return await new Promise((resolve, reject) => {
-		const chunks = [];
-
-		contentStream.on('data', (chunk) => {
-			chunks.push(chunk);
-		});
-
-		contentStream.on('end', () => {
-			const buffer = Buffer.concat(chunks);
-			const base64String = buffer.toString('base64');
-			resolve(base64String);
-		});
-
-		contentStream.on('error', (err) => {
-			reject(err);
-		});
-	});
-}
-
-/**
- * 
  * @After(event = { "READ" }, entity = "btpgenai4s4Srv.ReportMessage")
- * @param {(Object|Object[])} results - For the After phase only: the results of the event processing
- * @param {Object} request - User information, tenant-specific CDS model, headers and query parameters
-*/
-module.exports = async function(results, request) {
+ * @param {(Object|Object[])} results - Results of the event processing
+ * @param {Object} request - Request containing user info, tenant-specific CDS model, headers, and query parameters
+ */
+module.exports = async function (results, request) {
 	try {
-		// Extract the message ID from the request data
-		const messageId = results[0].ID
+		// Extract the message ID from the first result
+		const messageId = results[0].ID;
 		if (!messageId) {
-			request.reject(400, 'Message ID is missing.');
+			request.reject({ code: 400, message: 'Message ID is missing.', target: 'ReportMessage' });
 		}
-		
+
 		let customerMessage;
 
 		try {
-			// Fetch the message
+			// Fetch customer message record by ID
 			customerMessage = await SELECT.one('btpgenai4s4.CustomerMessage').where({ ID: messageId }).forUpdate();
 		} catch (error) {
 			const message = 'Failed to retrieve the customer message';
-			LOG.error(`${message}`, error.message);
-			request.reject(400, `${message}`);
+			LOG.error(message, error.message);
+			request.reject({ code: 500, message: message, target: 'ReportMessage' });
 		}
 
-		const {
-			ID,
-			fullMessageEnglish,
-			titleCustomerLanguage,
-			fullMessageCustomerLanguage,
-			imageLLMDescription
-		} = customerMessage;
+		// Destructure necessary fields from the fetched message
+		const { ID, fullMessageEnglish, titleCustomerLanguage, fullMessageCustomerLanguage, imageLLMDescription } = customerMessage || {};
 
+		// Validate essential fields
 		if (!ID || !titleCustomerLanguage || !fullMessageCustomerLanguage) {
-			const message = 'Failed to retrieve important feilds from the customer message';
-			LOG.error(`${message}`);
-			request.reject(400, `${message}`);
+			const message = 'Missing required fields in the customer message';
+			LOG.error(message);
+			request.reject({ code: 400, message: message, target: 'ReportMessage' });
 		}
 
+		// Proceed only if the image description is missing
 		if (!imageLLMDescription) {
 			let base64Image;
+
 			try {
+				// Retrieve the latest attachment for the customer message
 				const [latestAttachment] = await cds.run(
 					SELECT.from('btpgenai4s4.CustomerMessage:attachments')
-					  .orderBy('createdAt desc')
-					  .limit(1)
-				  );
+						.orderBy('createdAt desc')
+						.limit(1)
+				);
+
+				if (!latestAttachment) {
+					const message = `No attachments found for CustomerMessage ID ${ID}`;
+					LOG.error(message);
+					request.reject({ code: 400, message: message, target: 'ReportMessage' });
+				}
+
+				// Fetch the attachment content and convert it to Base64
 				const attachID = latestAttachment.ID;
 				const AttachmentsSrv = await cds.connect.to("attachments");
 				const contentStream = await AttachmentsSrv.get('btpgenai4s4.CustomerMessage:attachments', attachID);
-				// Convert the content stream to a Base64-encoded string
 				base64Image = await getBase64Content(contentStream);
 			} catch (error) {
 				const message = `Error when trying to generate the image description for message ${ID}`;
-				LOG.error(`${message}`, `${error.message}`);
-				request.reject(500, message);
+				LOG.error(message, error.message);
+				request.reject({ code: 500, message: message, target: 'ReportMessage' });
 			}
 
-			// Proceed with the Base64-encoded content
+			// Analyze the Base64 image and retrieve description data
 			const imageInterpResultJSON = await analyseImage(base64Image, fullMessageEnglish);
 
 			let { imageAboutFreezers, imageMatchingUserDescription, imageLLMDescription } = imageInterpResultJSON;
-			// Validate the response from the image analysis service
+
+			// Validate the image analysis results
 			if (!imageAboutFreezers) {
 				const message = `Incomplete response from completion service when processing issue image for the CustomerMessage ID ${ID}`;
 				LOG.error(message);
-				return request.reject(400, message);
+				request.reject({ code: 500, message: message, target: 'ReportMessage' });
 			}
 
-			try {
-				if (imageAboutFreezers === "yes" && imageMatchingUserDescription === "yes") {
+			// Update the message if the image is valid and matches the description
+			if (imageAboutFreezers === "yes" && imageMatchingUserDescription === "yes") {
+				try {
 					await UPDATE('btpgenai4s4.CustomerMessage')
 						.set({ imageAboutFreezers, imageMatchingUserDescription, imageLLMDescription })
 						.where({ ID });
-					const message = `CustomerMessage with ID ${ID} created and generated data inserted`
+					const message = `CustomerMessage with ID ${ID} created and generated data inserted`;
 					LOG.info(message);
-					request.notify( message);
-				} else {
-					const message = "The image you sent is not about freezers or the image is not matching the issue description";
-					LOG.info(message);
-					request.reject(400, message);
+				} catch (error) {
+					const message = `Error updating CustomerMessage ID ${ID}`;
+					LOG.error(message, error.message);
+					request.reject({ code: 500, message: message, target: 'ReportMessage' });
 				}
-			} catch (error) {
-				const message = `Error updating CustomerMessage ID ${ID}`;
-				LOG.error(`${message}`, `${error.message}`);
-				request.reject(500, message);
+			} else {
+				// Reject if the image does not match expectations
+				const message = "The image you sent is not about freezers or the image is not matching the issue description";
+				LOG.info(message);
+				request.reject(400, message);
 			}
 		} else {
+			// Log if the image has already been processed
 			LOG.info(`Issue image for CustomerMessage ID ${ID} already processed`);
 		}
 	} catch (error) {
-		// Log and handle unexpected errors
-		LOG.error('An unexpected error occurred:', error.message || JSON.stringify(error));
-		request.error({
-			code: 500,
-			message: error.message || 'An error occurred',
-			target: 'ReportMessage',
-			status: error.code || 500,
-		});
+		LOG.error('Unexpected error occurred:', error.message || JSON.stringify(error));
+		return error;
 	}
 }

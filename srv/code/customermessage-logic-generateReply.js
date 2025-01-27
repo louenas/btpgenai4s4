@@ -15,7 +15,7 @@ module.exports = async function (request) {
 		const { ID } = request.params[0] || {};
 		// Check if the ID parameter is provided
 		if (!ID) {
-			return request.reject(400, 'ID parameter is missing.');
+			request.reject(400, 'ID parameter is missing.');
 		}
 
 		let customerMessage;
@@ -27,18 +27,19 @@ module.exports = async function (request) {
 			}
 		} catch (error) {
 			LOG.error('Failed to retrieve customer message', error.message);
-			return request.reject(500, `Failed to retrieve customer message with ID ${ID}`);
+			request.reject({ code: 500, message: `Failed to retrieve customer message with ID ${ID}`, target: 'CustomerMessages' });
 		}
-	
+
 		const { messageCategory, messageSentiment, fullMessageEnglish, imageAboutFreezers, imageMatchingUserDescription, imageLLMDescription, S4HCP_ServiceOrder_ServiceOrder: attachedSOId } = customerMessage;
 
+		// Use Sales order data as part of the context of the response if available
 		let soContext = '';
 		if (attachedSOId) {
 			try {
 				// Connect to the S4HCP Service Order OData service
 				const s4HcpServiceOrderOdata = await cds.connect.to('S4HCP_ServiceOrder_Odata');
 				const { A_ServiceOrder } = s4HcpServiceOrderOdata.entities;
-	
+
 				// Fetch service order details, including long text notes
 				const s4hcSO = await s4HcpServiceOrderOdata.run(
 					SELECT.from(A_ServiceOrder, so => {
@@ -48,7 +49,7 @@ module.exports = async function (request) {
 						});
 					}).where({ ServiceOrder: attachedSOId })
 				);
-	
+
 				if (s4hcSO && s4hcSO.length > 0) {
 					const serviceOrder = s4hcSO[0];
 					const notes = serviceOrder.to_Text || [];
@@ -64,23 +65,25 @@ module.exports = async function (request) {
 		} else {
 			LOG.warn('No or Invalid attachedSOId provided.');
 		}
-	
+
 		let resultJSON;
 		let customerInputContext;
-		if(imageAboutFreezers === "yes" && imageMatchingUserDescription === "yes")
+		// Use the issue's image as part of the context of the response if available
+		if (imageAboutFreezers === "yes" && imageMatchingUserDescription === "yes")
 			customerInputContext = fullMessageEnglish + " " + imageLLMDescription;
-		else 
+		else
 			customerInputContext = fullMessageEnglish;
-		
+
+		// Generate a reply depending on wheter the customer message is technical or not
 		if (messageCategory === 'Technical') {
 			try {
 				// Generate embedding for the technical message
 				customerInputContextEmbedding = await generateEmbedding(request, customerInputContext);
-			} catch (err) {
-				LOG.error('Embedding service failed', err);
-				return request.reject(500, 'Embedding service failed');
+			} catch (error) {
+				LOG.error('Embedding service failed', error);
+				request.reject({ code: 500, message: "Completion service failed", target: 'CustomerMessages' });
 			}
-	
+
 			let relevantFAQs;
 			try {
 				// Retrieve relevant FAQ items based on the similarity with the generated embedding
@@ -91,31 +94,31 @@ module.exports = async function (request) {
 				LOG.error('Failed to retrieve FAQ items', error.message);
 				//return request.reject(500, 'Failed to retrieve FAQ items');
 			}
-	
+
 			const faqItem = (relevantFAQs && relevantFAQs.length > 0) ? relevantFAQs[0] : { issue: '', question: '', answer: '' };
 			try {
-				// Generate response for the technical message using the FAQ item and service order context
+				// Generate a response for the technical message using the FAQ item and service order context
 				resultJSON = await generateResponseTechMessage(faqItem.issue, faqItem.question, faqItem.answer, customerInputContext, soContext);
-			} catch (err) {
-				LOG.error('Completion service failed', err);
-				return request.reject(500, 'Completion service failed');
+			} catch (error) {
+				LOG.error('Completion service failed', error);
+				request.reject({ code: 500, message: "Completion service failed", target: 'CustomerMessages' });
 			}
 		} else {
 			try {
 				// Generate response for non-technical messages, including service order context
 				resultJSON = await generateResponseOtherMessage(messageSentiment, customerInputContext, soContext);
-			} catch (err) {
-				LOG.error('Completion service failed', err);
-				return request.reject(500, 'Completion service failed');
+			} catch (error) {
+				LOG.error('Completion service failed', error);
+				request.reject({ code: 500, message: "Completion service failed", target: 'CustomerMessages' });
 			}
 		}
-	
+
 		const { suggestedResponseCustomerLanguage, suggestedResponseEnglish } = resultJSON;
 		// Ensure the generated responses are valid before updating the record
 		if (!suggestedResponseCustomerLanguage || !suggestedResponseEnglish) {
-			return request.reject(500, 'Completion service failed. Generated responses are invalid');
+			request.reject(500, 'Completion service failed. Generated responses are invalid');
 		}
-	
+
 		try {
 			// Update the CustomerMessage with the generated responses
 			await UPDATE('btpgenai4s4.CustomerMessage').set({
@@ -125,16 +128,10 @@ module.exports = async function (request) {
 			LOG.info(`CustomerMessage with ID ${ID} updated with a reply to the customer.`);
 		} catch (error) {
 			LOG.error('Failed to update customer message', error.message);
-			return request.reject(500, `Failed to update customer message with ID ${ID}`);
+			request.reject({ code: 500, message: `Failed to update customer message with ID ${ID}`, target: 'CustomerMessages' });
 		}
-	} catch (err) {
-		// Log and handle unexpected errors
-		LOG.error('An error occurred:', err.message);
-		request.reject({
-			code: 'INTERNAL_SERVER_ERROR',
-			message: err.message || 'An internal error occurred',
-			target: 'GenerateReply',
-			status: err.code || 500,
-		});
+	} catch (error) {
+		LOG.error('An error occurred:', error.message);
+		return error;
 	}
 }
