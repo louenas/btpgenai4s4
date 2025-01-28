@@ -25,7 +25,7 @@ module.exports = async function (results, request) {
 			}
 		} catch (error) {
 			LOG.error('Failed to retrieve the FAQ item', error.message);
-			request.reject({ code: 500, message: `Failed to retrieve the FAQ item ${productFAQID}`, target: 'ProductFAQ' });
+			request.reject(500, `Failed to retrieve the FAQ item ${productFAQID}`);
 		}
 
 		const { ID, issue, question, answer } = productFAQ;
@@ -37,7 +37,7 @@ module.exports = async function (results, request) {
 			//LOG.info("embedding", embedding);
 		} catch (error) {
 			LOG.error('Embedding service failed:', error.message);
-			request.reject({ code: 500, message: 'Embedding service failed.', target: 'ProductFAQ' });
+			request.reject(500, 'Embedding service failed.');
 		}
 
 		try {
@@ -46,12 +46,12 @@ module.exports = async function (results, request) {
 			LOG.info(`ProductFAQ with ID ${ID} updated with new embedding.`);
 		} catch (error) {
 			LOG.error('Failed to update the FAQ item', error.message);
-			request.reject({ code: 500, message: `Failed to update the FAQ item ${ID}`, target: 'ProductFAQ' });
+			request.reject(500, `Failed to update the FAQ item ${ID}`);
 		}
 
 	} catch (error) {
 		// Log the error and send a response with appropriate details
-		LOG.error('An error occurred:', error.message);
+		LOG.error('Unexpected error occurred:', error.message || JSON.stringify(error));
 		return error;
 	}
 }

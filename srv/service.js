@@ -9,6 +9,7 @@ const productfaq_Logic_EmbedFAQ = require('./code/productfaq-logic-embedFAQ');
 const customermessage_Logic_GenerateReply = require('./code/customermessage-logic-generateReply');
 const customermessage_Logic_MaintainSO = require('./code/customermessage-logic-maintainSO');
 const reportmessage_Logic_AfterRead = require('./code/reportmessage-logic-afterRead');
+const reportmessage_Logic_BeforeCreate = require('./code/reportmessage-logic-beforeCreate');
 
 class btpgenai4s4Srv extends LCAPApplicationService {
     async init() {
@@ -35,6 +36,10 @@ class btpgenai4s4Srv extends LCAPApplicationService {
 
         this.after('READ', 'ReportMessage', async (results, request) => {
             await reportmessage_Logic_AfterRead(results, request);
+        });
+
+        this.before('CREATE', 'ReportMessage', async (request) => {
+            await reportmessage_Logic_BeforeCreate(request);
         });
 
         return super.init();

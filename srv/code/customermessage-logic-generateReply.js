@@ -10,7 +10,7 @@ const SIMILARITY_THRESHOLD = 0.45;
  * @On(event = { "Action1" }, entity = "btpgenai4s4Srv.CustomerMessages")
  * @param {Object} request - User information, tenant-specific CDS model, headers and query parameters
 */
-module.exports = async function (request) {
+module.exports = async function(request) {
 	try {
 		const { ID } = request.params[0] || {};
 		// Check if the ID parameter is provided
@@ -21,13 +21,13 @@ module.exports = async function (request) {
 		let customerMessage;
 		try {
 			// Retrieve the CustomerMessage record based on the provided ID
-			customerMessage = await SELECT.one.from('btpgenai4s4.CustomerMessage').where({ ID });
+			customerMessage = await SELECT.one.from('btpgenai4s4.CustomerMessage').where({ ID }).forUpdate();
 			if (!customerMessage) {
 				throw new Error(`CustomerMessage with ID ${ID} not found.`);
 			}
 		} catch (error) {
 			LOG.error('Failed to retrieve customer message', error.message);
-			request.reject({ code: 500, message: `Failed to retrieve customer message with ID ${ID}`, target: 'CustomerMessages' });
+			request.reject(500, `Failed to retrieve customer message with ID ${ID}`);
 		}
 
 		const { messageCategory, messageSentiment, fullMessageEnglish, imageAboutFreezers, imageMatchingUserDescription, imageLLMDescription, S4HCP_ServiceOrder_ServiceOrder: attachedSOId } = customerMessage;
@@ -82,7 +82,7 @@ module.exports = async function (request) {
 				customerInputContextEmbedding = await generateEmbedding(request, customerInputContext);
 			} catch (error) {
 				LOG.error('Embedding service failed', error);
-				request.reject({ code: 500, message: "Completion service failed", target: 'CustomerMessages' });
+				request.reject(500, "Completion service failed");
 			}
 
 			let relevantFAQs;
@@ -102,7 +102,7 @@ module.exports = async function (request) {
 				resultJSON = await generateResponseTechMessage(faqItem.issue, faqItem.question, faqItem.answer, customerInputContext, soContext);
 			} catch (error) {
 				LOG.error('Completion service failed', error);
-				request.reject({ code: 500, message: "Completion service failed", target: 'CustomerMessages' });
+				request.reject(500, "Completion service failed");
 			}
 		} else {
 			try {
@@ -110,7 +110,7 @@ module.exports = async function (request) {
 				resultJSON = await generateResponseOtherMessage(messageSentiment, customerInputContext, soContext);
 			} catch (error) {
 				LOG.error('Completion service failed', error);
-				request.reject({ code: 500, message: "Completion service failed", target: 'CustomerMessages' });
+				request.reject(500, "Completion service failed");
 			}
 		}
 
@@ -129,10 +129,10 @@ module.exports = async function (request) {
 			LOG.info(`CustomerMessage with ID ${ID} updated with a reply to the customer.`);
 		} catch (error) {
 			LOG.error('Failed to update customer message', error.message);
-			request.reject({ code: 500, message: `Failed to update customer message with ID ${ID}`, target: 'CustomerMessages' });
+			request.reject(500, `Failed to update customer message with ID ${ID}`);
 		}
 	} catch (error) {
-		LOG.error('An error occurred:', error.message);
+		LOG.error('An unexpected error occurred:', error.message || JSON.stringify(error));
 		return error;
 	}
 }
