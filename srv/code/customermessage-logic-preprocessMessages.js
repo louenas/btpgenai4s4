@@ -15,7 +15,7 @@ module.exports = async function (request) {
 			customerMessages = await SELECT.from('btpgenai4s4.CustomerMessage').forUpdate();
 		} catch (error) {
 			LOG.error('Failed to retrieve customer messages', error.message);
-			request.reject({ code: 500, message: 'Failed to retrieve customer messages', target: 'CustomerMessages' });
+			request.reject(500, 'Failed to retrieve customer messages');
 		}
 
 		// Process each customer message concurrently

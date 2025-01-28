@@ -3,18 +3,17 @@ const LOG = cds.log('GenAI');
 
 const { preprocessCustomerMessage } = require('./genai/orchestration');
 
+/**
+ * @After(event = { "CREATE" }, entity = "btpgenai4s4Srv.ReportMessage")
+ * @param {(Object|Object[])} results - Results of the event processing
+ * @param {Object} request - Request containing user info, tenant-specific CDS model, headers, and query parameters
+ */
 module.exports = async function (results, request) {
     try {
         // Extract message ID from the request and validate it
         const messageId = request.data.ID;
         if (!messageId) {
-            request.reject({ code: 400, message: 'Message ID is missing.', target: 'ReportMessage' });
-        }
-
-        // Check if the attached file is an image
-        const mimeType = request.data.attachments[0]?.mimeType;
-        if (!mimeType?.startsWith('image/')) {
-            request.reject({ code: 400, message: 'Please submit images only.', target: 'ReportMessage' });
+            request.reject(400, 'Message ID is missing.');
         }
 
         // Fetch the customer message record for the given message ID
@@ -24,7 +23,7 @@ module.exports = async function (results, request) {
         } catch (error) {
             const message = 'Failed to retrieve the customer message';
             LOG.error(message, error.message);
-            request.reject({ code: 500, message: message, target: 'ReportMessage' });
+            request.reject(500, message);
         }
 
         // Destructure necessary fields from the fetched customer message
@@ -35,7 +34,7 @@ module.exports = async function (results, request) {
         if (!ID || !titleCustomerLanguage || !fullMessageCustomerLanguage) {
             const message = 'Missing critical fields in the customer message';
             LOG.error(message);
-            request.reject({ code: 500, message: message, target: 'ReportMessage' });
+            request.reject(500, message);
         }
 
         // Process the message if any required field is missing
@@ -47,7 +46,7 @@ module.exports = async function (results, request) {
             } catch (error) {
                 const message = `Error from completion service for CustomerMessage ID ${ID}`;
                 LOG.error(message, error.message);
-                request.reject({ code: 500, message: message, target: 'ReportMessage' });
+                request.reject(500, message);
             }
 
             // Validate the response from the preprocessing service
@@ -55,7 +54,7 @@ module.exports = async function (results, request) {
             if (!fullMessageEnglish || !titleEnglish || !summaryCustomerLanguage || !summaryEnglish || !messageCategory || !messageUrgency || !messageSentiment) {
                 const message = `Incomplete response from completion service for CustomerMessage ID ${ID}`;
                 LOG.error(message);
-                request.reject({ code: 500, message: message, target: 'ReportMessage' });
+                request.reject(500, message);
             }
 
             // Update the database record with the enriched data
@@ -67,7 +66,7 @@ module.exports = async function (results, request) {
             } catch (error) {
                 const message = `Error updating CustomerMessage ID ${ID}`;
                 LOG.error(message, error.message);
-                request.reject({ code: 500, message: message, target: 'ReportMessage' });
+                request.reject(500, message);
             }
         } else {
             // Log if the message is already processed

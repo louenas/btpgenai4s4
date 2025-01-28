@@ -14,7 +14,7 @@ module.exports = async function (results, request) {
 		// Extract the message ID from the first result
 		const messageId = results[0].ID;
 		if (!messageId) {
-			request.reject({ code: 400, message: 'Message ID is missing.', target: 'ReportMessage' });
+			request.reject(400, 'Message ID is missing.');
 		}
 
 		let customerMessage;
@@ -25,7 +25,7 @@ module.exports = async function (results, request) {
 		} catch (error) {
 			const message = 'Failed to retrieve the customer message';
 			LOG.error(message, error.message);
-			request.reject({ code: 500, message: message, target: 'ReportMessage' });
+			request.reject(500, message);
 		}
 
 		// Destructure necessary fields from the fetched message
@@ -35,7 +35,7 @@ module.exports = async function (results, request) {
 		if (!ID || !titleCustomerLanguage || !fullMessageCustomerLanguage) {
 			const message = 'Missing required fields in the customer message';
 			LOG.error(message);
-			request.reject({ code: 400, message: message, target: 'ReportMessage' });
+			request.reject(400, message);
 		}
 
 		// Proceed only if the image description is missing
@@ -53,7 +53,7 @@ module.exports = async function (results, request) {
 				if (!latestAttachment) {
 					const message = `No attachments found for CustomerMessage ID ${ID}`;
 					LOG.error(message);
-					request.reject({ code: 400, message: message, target: 'ReportMessage' });
+					request.reject(400, message);
 				}
 
 				// Fetch the attachment content and convert it to Base64
@@ -64,7 +64,7 @@ module.exports = async function (results, request) {
 			} catch (error) {
 				const message = `Error when trying to generate the image description for message ${ID}`;
 				LOG.error(message, error.message);
-				request.reject({ code: 500, message: message, target: 'ReportMessage' });
+				request.reject(500, message);
 			}
 
 			// Analyze the Base64 image and retrieve description data
@@ -76,7 +76,7 @@ module.exports = async function (results, request) {
 			if (!imageAboutFreezers) {
 				const message = `Incomplete response from completion service when processing issue image for the CustomerMessage ID ${ID}`;
 				LOG.error(message);
-				request.reject({ code: 500, message: message, target: 'ReportMessage' });
+				request.reject(500, message);
 			}
 
 			// Update the message if the image is valid and matches the description
@@ -90,7 +90,7 @@ module.exports = async function (results, request) {
 				} catch (error) {
 					const message = `Error updating CustomerMessage ID ${ID}`;
 					LOG.error(message, error.message);
-					request.reject({ code: 500, message: message, target: 'ReportMessage' });
+					request.reject(500, message);
 				}
 			} else {
 				// Reject if the image does not match expectations

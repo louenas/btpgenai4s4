@@ -17,10 +17,10 @@ module.exports = async function (request) {
 		let customerMessage;
 		try {
 			// Retrieve the specific customer message record using the provided ID
-			customerMessage = await SELECT.one.from('btpgenai4s4.CustomerMessage').where({ ID });
+			customerMessage = await SELECT.one.from('btpgenai4s4.CustomerMessage').where({ ID }).forUpdate();
 		} catch (error) {
 			LOG.error('Failed to retrieve customer message', error.message);
-			request.reject({ code: 500, message: `Failed to retrieve customer message with ID ${ID}`, target: 'CustomerMessages' });
+			request.reject(500, `Failed to retrieve customer message with ID ${ID}`);
 		}
 
 		const { titleEnglish, fullMessageEnglish, suggestedResponseEnglish, S4HCP_ServiceOrder_ServiceOrder: attachedSOId } = customerMessage;
@@ -36,7 +36,7 @@ module.exports = async function (request) {
 			s4HcpServiceOrderOdata = await cds.connect.to('S4HCP_ServiceOrder_Odata');
 		} catch (error) {
 			LOG.error('Failed to connect to S/4HANA Cloud OData Service Order', error.message);
-			request.reject({ code: 500, message: 'Failed to connect to S/4HANA Cloud OData Service Order', target: 'CustomerMessages' });
+			request.reject(500, 'Failed to connect to S/4HANA Cloud OData Service Order');
 		}
 		const { A_ServiceOrder, A_ServiceOrderText } = s4HcpServiceOrderOdata.entities;
 
@@ -55,7 +55,7 @@ module.exports = async function (request) {
 				LOG.info(`Created Service Order Note: ${JSON.stringify(finalNote)}`);
 			} catch (error) {
 				LOG.error('Failed to add note to service order', error.message);
-				request.reject({ code: 500, message: 'Failed to add note to service order', target: 'CustomerMessages' });
+				request.reject(500, 'Failed to add note to service order');
 			}
 		} else {
 			// Define the service order's items, responsible person, and initial note
@@ -99,7 +99,7 @@ module.exports = async function (request) {
 				serviceOrder = await s4HcpServiceOrderOdata.run(INSERT.into(A_ServiceOrder, servOrder));
 			} catch (error) {
 				LOG.error('Failed to create service order.', error.message);
-				request.reject({ code: 500, message: 'Failed to create service order.', target: 'CustomerMessages' });
+				request.reject(500, 'Failed to create service order.');
 			}
 
 			const soId = serviceOrder.ServiceOrder;
@@ -113,7 +113,7 @@ module.exports = async function (request) {
 				LOG.info(`Updated customer message with Service Order Id: ${soId}`);
 			} catch (error) {
 				LOG.error('Failed to update customer message', error.message);
-				request.reject({ code: 500, message: `Failed to update customer message for service order ID ${soId}`, target: 'CustomerMessages' });
+				request.reject(500, `Failed to update customer message for service order ID ${soId}`);
 			}
 		}
 
