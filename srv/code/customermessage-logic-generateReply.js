@@ -75,6 +75,7 @@ module.exports = async function (request) {
 			customerInputContext = fullMessageEnglish;
 
 		// Generate a reply depending on wheter the customer message is technical or not
+		let customerInputContextEmbedding;
 		if (messageCategory === 'Technical') {
 			try {
 				// Generate embedding for the technical message

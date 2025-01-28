@@ -1,7 +1,7 @@
 const cds = require('@sap/cds');
 const LOG = cds.log('GenAI');
 
-const { preprocessCustomerMassage } = require('./genai/orchestration');
+const { preprocessCustomerMessage } = require('./genai/orchestration');
 
 module.exports = async function (results, request) {
     try {
@@ -43,7 +43,7 @@ module.exports = async function (results, request) {
             let messageResultJSON;
             try {
                 // Call the preprocessing service for message enrichment
-                messageResultJSON = await preprocessCustomerMassage(titleCustomerLanguage, fullMessageCustomerLanguage);
+                messageResultJSON = await preprocessCustomerMessage(titleCustomerLanguage, fullMessageCustomerLanguage);
             } catch (error) {
                 const message = `Error from completion service for CustomerMessage ID ${ID}`;
                 LOG.error(message, error.message);

@@ -34,7 +34,7 @@ module.exports = async function (results, request) {
 		let embedding;
 		try {
 			embedding = await generateEmbedding(request, `${issue} ${question} ${answer}`)
-			LOG.info("embedding", embedding);
+			//LOG.info("embedding", embedding);
 		} catch (error) {
 			LOG.error('Embedding service failed:', error.message);
 			request.reject({ code: 500, message: 'Embedding service failed.', target: 'ProductFAQ' });
