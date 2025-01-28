@@ -63,37 +63,11 @@ async function createOrchestrationClientForImageAnalysis(prompt) {
     });
 }
 
-// Simple orchestration completion using the LLM, returning a JSON object.
-async function orchestrationCompletionSimple(prompt) {
-    try {
-        const orchestrationClient = await createOrchestrationClient(prompt);
-        const response = await orchestrationClient.chatCompletion();
-        return JSON.parse(response.getContent());
-    } catch (error) {
-        LOG.error('Error in orchestration:', error);
-        throw new Error('Orchestration service failed.');
-    }
-}
-
-// Orchestration completion with additional input parameters, returning a JSON object.
-async function orchestrationCompletionTemplate(prompt) {
-    try {
-        const orchestrationClient = await createOrchestrationClient(prompt);
-        const response = await orchestrationClient.chatCompletion({
-            inputParams: { arg1: '', arg2: "" }
-        });
-        return JSON.parse(response.getContent());
-    } catch (error) {
-        LOG.error('Error in orchestration:', error);
-        throw new Error('Orchestration service failed.');
-    }
-}
-
 // Preprocess customer message by categorizing, translating, and summarizing.
 // Takes title and full message in customer's language.
 // Returns structured JSON with translated title and message, summaries, categories, urgency, and sentiment.
 
-async function preprocessCustomerMassage(titleCustomerLanguage, fullMessageCustomerLanguage) {
+async function preprocessCustomerMessage(titleCustomerLanguage, fullMessageCustomerLanguage) {
     const prompt = `
     Categorize the fullMessageCustomerLanguage into one of (Technical, Delivery, Service). 
     Classify urgency of the fullMessageCustomerLanguage into one of (High, Medium, Low). 
@@ -194,7 +168,7 @@ async function analyseImage(imageBase64, customerIssueDescription) {
     This is the issue description submitted by the customer {{?customerIssueDescription}}.
     Generate a description in English of the submitted image and put it in the field imageLLMDescription.
     If the image is not about freezers then return the JSON {imageAboutFreezers: no}.
-    if the issue description submitted by the customer matches the image then return the JSON {imageAboutFreezers: yes, imageMatchingUserDescription: yes, imageLLMDescription: Text}.                
+    If the issue description submitted by the customer matches the image then return the JSON {imageAboutFreezers: yes, imageMatchingUserDescription: yes, imageLLMDescription: Text}                
     Otherwise return the JSON {imageAboutFreezers: yes, imageMatchingUserDescription: no, imageLLMDescription: Text}`;
 
     const orchestrationClient = await createOrchestrationClientForImageAnalysis(prompt);
@@ -207,7 +181,7 @@ async function analyseImage(imageBase64, customerIssueDescription) {
 };
 
 module.exports = {
-    preprocessCustomerMassage,
+    preprocessCustomerMessage,
     generateResponseTechMessage,
     generateResponseOtherMessage,
     analyseImage,
