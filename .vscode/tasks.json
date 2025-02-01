@@ -92,7 +92,8 @@
         "sap_fiori_3"
       ],
       "dependsOn": [
-        "BuildMDK"
+        "BuildMDK",
+        "DeployToHANADB:.env1"
       ],
       "options": {
         "cwd": "${workspaceFolder}"

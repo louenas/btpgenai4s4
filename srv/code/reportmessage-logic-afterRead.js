@@ -12,7 +12,7 @@ const { getBase64Content } = require('./genai/utils');
 module.exports = async function (results, request) {
 	try {
 		// Extract the message ID from the first result
-		const messageId = results[0].ID;
+		const messageId = results?.[0]?.ID;
 		if (!messageId) {
 			request.reject(400, 'Message ID is missing.');
 		}
@@ -45,21 +45,23 @@ module.exports = async function (results, request) {
 			try {
 				// Retrieve the latest attachment for the customer message
 				const [latestAttachment] = await cds.run(
-					SELECT.from('btpgenai4s4.CustomerMessage:attachments')
+					SELECT.from('btpgenai4s4.CustomerMessage:attachments').where({ up__ID: messageId})
 						.orderBy('createdAt desc')
 						.limit(1)
 				);
 
 				if (!latestAttachment) {
-					const message = `No attachments found for CustomerMessage ID ${ID}`;
+					const message = 'No attachment was sent';
 					LOG.error(message);
-					request.reject(400, message);
+					request.warn(message);
+					return;
 				}
 
 				// Fetch the attachment content and convert it to Base64
 				const attachID = latestAttachment.ID;
 				const AttachmentsSrv = await cds.connect.to("attachments");
 				const contentStream = await AttachmentsSrv.get('btpgenai4s4.CustomerMessage:attachments', attachID);
+				// Convert the content stream to a Base64-encoded string
 				base64Image = await getBase64Content(contentStream);
 			} catch (error) {
 				const message = `Error when trying to generate the image description for message ${ID}`;
