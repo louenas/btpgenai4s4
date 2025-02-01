@@ -80,6 +80,9 @@ module.exports = async function(request) {
 			try {
 				// Generate embedding for the technical message
 				customerInputContextEmbedding = await generateEmbedding(request, customerInputContext);
+				if (!customerInputContextEmbedding || !Array.isArray(customerInputContextEmbedding)) {
+					throw new Error('Invalid embedding response');
+				}
 			} catch (error) {
 				LOG.error('Embedding service failed', error);
 				request.reject(500, "Completion service failed");
