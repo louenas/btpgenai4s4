@@ -40,12 +40,13 @@ module.exports = async function (results, request) {
 
 		// Proceed only if the image description is missing
 		if (!imageLLMDescription) {
-			let base64Image;
 
+			let contentStream;
 			try {
 				// Retrieve the latest attachment for the customer message
 				const [latestAttachment] = await cds.run(
-					SELECT.from('btpgenai4s4.CustomerMessage:attachments').where({ up__ID: messageId})
+					SELECT.from('btpgenai4s4.CustomerMessage:attachments').where({ up__ID: messageId })
+						//SELECT.from('btpgenai4s4.CustomerMessage:attachments')
 						.orderBy('createdAt desc')
 						.limit(1)
 				);
@@ -60,18 +61,26 @@ module.exports = async function (results, request) {
 				// Fetch the attachment content and convert it to Base64
 				const attachID = latestAttachment.ID;
 				const AttachmentsSrv = await cds.connect.to("attachments");
-				const contentStream = await AttachmentsSrv.get('btpgenai4s4.CustomerMessage:attachments', attachID);
-				// Convert the content stream to a Base64-encoded string
-				base64Image = await getBase64Content(contentStream);
+				contentStream = await AttachmentsSrv.get('btpgenai4s4.CustomerMessage:attachments', attachID);
 			} catch (error) {
-				const message = `Error when trying to generate the image description for message ${ID}`;
+				const message = `Error when trying retrive the attachment for message ${ID}`;
 				LOG.error(message, error.message);
 				request.reject(500, message);
 			}
 
+			let base64Image;
+			let imageInterpResultJSON;
+			try {
+				// Convert the content stream to a Base64-encoded string
+				base64Image = await getBase64Content(contentStream);
+				imageInterpResultJSON = await analyseImage(base64Image, fullMessageEnglish);
+			} catch (error) {
+				const message = `Error when trying to process the image and generate the image description for message ${ID}`;
+				LOG.error(message, error.message);
+				request.reject(500, message);
+			}
+			
 			// Analyze the Base64 image and retrieve description data
-			const imageInterpResultJSON = await analyseImage(base64Image, fullMessageEnglish);
-
 			let { imageAboutFreezers, imageMatchingUserDescription, imageLLMDescription } = imageInterpResultJSON;
 
 			// Validate the image analysis results
