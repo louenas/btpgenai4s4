@@ -50,22 +50,15 @@ module.exports = async function (results, request) {
 						.orderBy('createdAt desc')
 						.limit(1)
 				);
-
-				if (!latestAttachment) {
-					const message = 'No attachment was sent';
-					LOG.error(message);
-					request.warn(message);
-					return;
-				}
-
 				// Fetch the attachment content and convert it to Base64
 				const attachID = latestAttachment.ID;
 				const AttachmentsSrv = await cds.connect.to("attachments");
 				contentStream = await AttachmentsSrv.get('btpgenai4s4.CustomerMessage:attachments', attachID);
 			} catch (error) {
-				const message = `Error when trying retrive the attachment for message ${ID}`;
-				LOG.error(message, error.message);
-				request.reject(500, message);
+				const message = 'Either there is no attachment or the processing of it failed!';
+				LOG.error(message);
+				request.warn(message);
+				return;
 			}
 
 			let base64Image;
