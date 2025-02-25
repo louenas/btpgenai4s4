@@ -2,11 +2,11 @@ namespace btpgenai4s4;
 
 using { S4HCP_ServiceOrder_Odata } from '../srv/external/S4HCP_ServiceOrder_Odata.cds';
 
-using { cuid, managed } from '@sap/cds/common';
+using { cuid } from '@sap/cds/common';
 
 using { Attachments } from '@cap-js/attachments';
 
-entity CustomerMessage : cuid, managed
+entity CustomerMessage : cuid
 {
     customerMessageID : Integer
         @mandatory;
