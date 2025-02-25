@@ -18,7 +18,7 @@
       "envFile": "${workspaceFolder}/env/.env1",
       "env": {
         "run.config": "{\"handlerId\":\"lcap_run_config_handler_id\",\"runnableId\":\"{\\\"projectPath\\\":\\\"/home/user/projects/btpgenai4s4\\\",\\\"profileName\\\":\\\"\\\"}\"}",
-        "runConfigurations": "{\"odataBinding\":{\"S4HCP_ServiceOrder_Odata\":{\"destination\":\"S4HCP-ServiceOrder-Odata\",\"type\":\"Destination\",\"path\":\"\"}}}"
+        "runConfigurations": "{\"odataBinding\":{\"S4HCP_ServiceOrder_Odata\":{\"destination\":\"S4HCP-ServiceOrder-Odata\",\"type\":\"Destination\",\"path\":\"\"}},\"dbBinding\":{\"type\":\"SAP HANA Cloud\",\"dbName\":\"db1_h00\"}}"
       }
     }
   ]
