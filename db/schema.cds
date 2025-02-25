@@ -2,11 +2,9 @@ namespace btpgenai4s4;
 
 using { S4HCP_ServiceOrder_Odata } from '../srv/external/S4HCP_ServiceOrder_Odata.cds';
 
-using { cuid, managed } from '@sap/cds/common';
+using { cuid } from '@sap/cds/common';
 
-//using { Attachments } from '@cap-js/attachments';
-
-entity CustomerMessage : cuid, managed
+entity CustomerMessage : cuid
 {
     customerMessageID : Integer
         @mandatory;
@@ -28,7 +26,6 @@ entity CustomerMessage : cuid, managed
     suggestedResponseEnglish : String(5000);
     suggestedResponseCustomerLanguage : String(5000);
     S4HCP_ServiceOrder : Association to one S4HCP_ServiceOrder_Odata.A_ServiceOrder;
-    //attachments: Composition of many Attachments;
 }
 
 annotate CustomerMessage with @assert.unique :

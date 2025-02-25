@@ -8,26 +8,20 @@ async function generateEmbedding(request, content) {
         return request.reject(400, 'Invalid content provided for embedding generation.');
     }
 
-    try {
-        // Import the AzureOpenAiEmbeddingClient from SAP AI SDK
-        const { AzureOpenAiEmbeddingClient } = await import('@sap-ai-sdk/foundation-models');
-        const client = new AzureOpenAiEmbeddingClient('text-embedding-3-small');
-        
-        // Generate embedding for the input content
-        const response = await client.run({ input: content });
-        const embedding = response.getEmbedding();
+    // Import the AzureOpenAiEmbeddingClient from SAP AI SDK
+    const { AzureOpenAiEmbeddingClient } = await import('@sap-ai-sdk/foundation-models');
+    const client = new AzureOpenAiEmbeddingClient('text-embedding-3-small');
 
-        // Validate the received embedding
-        if (!Array.isArray(embedding) || embedding.length === 0) {
-            return request.reject(500, 'Invalid embedding received from the service.');
-        }
+    // Generate embedding for the input content
+    const response = await client.run({ input: content });
+    const embedding = response.getEmbedding();
 
-        return embedding;
-    } catch (error) {
-        // Log and handle any errors from the embedding service
-        LOG.error('Embedding service failed:', error);
-        return request.reject(503, 'Embedding service is unavailable.');
+    // Validate the received embedding
+    if (!Array.isArray(embedding) || embedding.length === 0) {
+        return request.reject(500, 'Invalid embedding received from the service.');
     }
+
+    return embedding;
 }
 
 module.exports = { generateEmbedding };

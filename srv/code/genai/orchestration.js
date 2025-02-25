@@ -3,14 +3,14 @@ const LOG = cds.log('GenAI');
 
 // Configuration object for the LLM, specifying model name and parameters.
 const LLM_CONFIG = {
-  model_name: 'gpt-4o-mini',
-  model_params: {
-    max_tokens: 2048,
-    temperature: 0.1,
-    response_format: {
-      type: 'json_object',
-    },
-  }
+    model_name: 'gpt-4o-mini',
+    model_params: {
+        max_tokens: 2048,
+        temperature: 0.1,
+        response_format: {
+            type: 'json_object',
+        },
+    }
 };
 
 // System message to set the context for the LLM.
@@ -157,7 +157,7 @@ async function generateResponseOtherMessage(messageSentiment, fullMessageCustome
 }
 
 module.exports = {
-    preprocessCustomerMassage, 
-    generateResponseTechMessage, 
+    preprocessCustomerMassage,
+    generateResponseTechMessage,
     generateResponseOtherMessage,
 };
