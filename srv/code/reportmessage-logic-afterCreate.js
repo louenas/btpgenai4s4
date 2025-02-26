@@ -33,7 +33,8 @@ module.exports = async function (results, request) {
     if (!ID || !titleCustomerLanguage || !fullMessageCustomerLanguage) {
         const message = 'Missing critical fields in the customer message';
         LOG.error(message);
-        request.reject(500, message);
+        request.warn(message);
+        return;
     }
 
     // Process the message if any required field is missing
@@ -45,7 +46,8 @@ module.exports = async function (results, request) {
         } catch (error) {
             const message = `Error from completion service for CustomerMessage ID ${ID}`;
             LOG.error(message, error.message);
-            request.reject(500, message);
+            request.warn(message);
+            return;
         }
 
         // Validate the response from the preprocessing service
@@ -53,7 +55,8 @@ module.exports = async function (results, request) {
         if (!fullMessageEnglish || !titleEnglish || !summaryCustomerLanguage || !summaryEnglish || !messageCategory || !messageUrgency || !messageSentiment) {
             const message = `Incomplete response from completion service for CustomerMessage ID ${ID}`;
             LOG.error(message);
-            request.reject(500, message);
+            request.warn(message);
+            return;
         }
 
         // Update the database record with the enriched data
@@ -65,7 +68,8 @@ module.exports = async function (results, request) {
         } catch (error) {
             const message = `Error updating CustomerMessage ID ${ID}`;
             LOG.error(message, error.message);
-            request.reject(500, message);
+            request.warn(message);
+            return;
         }
     } else {
         // Log if the message is already processed

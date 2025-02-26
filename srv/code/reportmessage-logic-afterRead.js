@@ -34,7 +34,8 @@ module.exports = async function (results, request) {
 	if (!ID || !titleCustomerLanguage || !fullMessageCustomerLanguage) {
 		const message = 'Missing required fields in the customer message';
 		LOG.error(message);
-		request.reject(400, message);
+		request.warn(message);
+		return;
 	}
 
 	// Proceed only if the image description is missing
@@ -69,7 +70,8 @@ module.exports = async function (results, request) {
 		} catch (error) {
 			const message = `Error when trying to process the image and generate the image description for message ${ID}`;
 			LOG.error(message, error.message);
-			request.reject(500, message);
+			request.warn(message);
+			return;
 		}
 
 		// Analyze the Base64 image and retrieve description data
@@ -79,7 +81,8 @@ module.exports = async function (results, request) {
 		if (!imageAboutFreezers) {
 			const message = `Incomplete response from completion service when processing issue image for the CustomerMessage ID ${ID}`;
 			LOG.error(message);
-			request.reject(500, message);
+			request.warn(message);
+			return;
 		}
 
 		// Update the message if the image is valid and matches the description
@@ -93,16 +96,19 @@ module.exports = async function (results, request) {
 			} catch (error) {
 				const message = `Error updating CustomerMessage ID ${ID}`;
 				LOG.error(message, error.message);
-				request.reject(500, message);
+				request.warn(message);
+				return;
 			}
 		} else {
 			// Reject if the image does not match expectations
 			const message = "The image you sent is not about freezers or the image is not matching the issue description";
-			LOG.info(message);
-			request.reject(400, message);
+			LOG.error(message);
+			request.warn(message);
+			return;
 		}
 	} else {
 		// Log if the image has already been processed
 		LOG.info(`Issue image for CustomerMessage ID ${ID} already processed`);
 	}
+
 }
