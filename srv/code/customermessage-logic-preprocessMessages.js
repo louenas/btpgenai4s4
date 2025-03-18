@@ -1,6 +1,6 @@
 const cds = require('@sap/cds');
 const LOG = cds.log('GenAI');
-const { preprocessCustomerMassage } = require('./genai/orchestration');
+const { preprocessCustomerMessage } = require('./genai/orchestration');
 
 /**
  * message categorization, urgency classification, service categorization and summarization and translation
@@ -37,7 +37,7 @@ module.exports = async function (request) {
 			let resultJSON;
 			try {
 				// Preprocess the customer message using an external service
-				resultJSON = await preprocessCustomerMassage(titleCustomerLanguage, fullMessageCustomerLanguage);
+				resultJSON = await preprocessCustomerMessage(titleCustomerLanguage, fullMessageCustomerLanguage);
 			} catch (error) {
 				LOG.error(`Error from completion service for CustomerMessage ID ${ID}: ${error.message}`);
 				return;  // Skip this message and proceed to the next
