@@ -6,7 +6,6 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
-    "@cap-js/attachments": "^1.1.8",
     "@cap-js/hana": "^1",
     "@sap-ai-sdk/foundation-models": "^1.3.0",
     "@sap-ai-sdk/orchestration": "^1.3.0",
