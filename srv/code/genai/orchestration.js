@@ -103,13 +103,15 @@ async function preprocessCustomerMessage(titleCustomerLanguage, fullMessageCusto
 }
 
 // generate a response for customer technical messages
-async function generateResponseTechMessage(issue, question, answer, fullMessageEnglishAndImageDescription, soContext) {
+async function generateResponseTechMessage(issue, question, answer, fullMessageCustomerLanguage, imageLLMDescription, soContext) {
     // Define a prompt that provides the context for generating a technical response
-    const prompt = `
-    Generate a helpful reply message including the troubleshooting procedure to the newCustomerMessage based on previousCustomerMessages and relevantFAQItem:
+    let prompt = `
+    Generate a helpful reply message including the troubleshooting procedure to the newCustomerMessage based on previousCustomerMessages and relevantFAQItem. 
+    The suggestedResponseCustomerLanguage should be in the same language of the newCustomerMessage:
     relevantFAQItem: issue - {{?issue}}, Question - {{?question}} and Answer - {{?answer}}
-    newCustomerMessage: {{?fullMessageEnglishAndImageDescription}}
-    previousCustomerMessages: {{?soContext}}
+    newCustomerMessage: {{?fullMessageCustomerLanguage}}`;
+    if (imageLLMDescription) prompt += `imageDescription: {{?imageLLMDescription}}`;
+    prompt += `previousCustomerMessages: {{?soContext}}
     Produce the reply in two languages: in the original language of newCustomerMessage and in English. Return the result in the following JSON template:
     {
         suggestedResponseEnglish: Text,
@@ -120,9 +122,15 @@ async function generateResponseTechMessage(issue, question, answer, fullMessageE
         // Create orchestration client using the generated prompt
         const orchestrationClient = await createOrchestrationClient(prompt);
         // Get the response by providing the required input parameters
-        const response = await orchestrationClient.chatCompletion({
-            inputParams: { issue, question, answer, fullMessageEnglishAndImageDescription, soContext }
-        });
+        let response;
+        if (imageLLMDescription)  
+            response = await orchestrationClient.chatCompletion({
+            inputParams: { issue, question, answer, fullMessageCustomerLanguage, imageLLMDescription, soContext }});
+        else 
+            response = await orchestrationClient.chatCompletion({
+            inputParams: { issue, question, answer, fullMessageCustomerLanguage, soContext }
+            });
+
         // Parse and return the generated response in JSON format
         return JSON.parse(response.getContent());
     } catch (error) {
@@ -133,13 +141,18 @@ async function generateResponseTechMessage(issue, question, answer, fullMessageE
 }
 
 // generate a response for customer non-technical messages
-async function generateResponseOtherMessage(messageSentiment, fullMessageEnglishAndImageDescription, soContext) {
+async function generateResponseOtherMessage(messageSentiment, fullMessageCustomerLanguage, imageLLMDescription, soContext) {
     // Determine message type based on customer sentiment (either an apology or a thank you note)
     const messageType = messageSentiment === 'Negative' ? 'a "we are sorry" note' : 'a gratitude note';
-    const prompt = `
+
+
+    
+    let prompt = `
     Generate {{?messageType}} to the newCustomerMessage based on previous customer messages previousCustomerMessages. 
-    newCustomerMessage: {{?fullMessageEnglishAndImageDescription}}
-    previousCustomerMessages: {{?soContext}}
+    The suggestedResponseCustomerLanguage should be in the same language of the newCustomerMessage:
+    newCustomerMessage: {{?fullMessageCustomerLanguage}}`;
+    if (imageLLMDescription) prompt += `imageDescription: {{?imageLLMDescription}}`;
+    prompt += `previousCustomerMessages: {{?soContext}}
     Produce the reply in two languages: in the original language of newCustomerMessage and in English. Return the result in the following JSON template:
     {
         suggestedResponseEnglish: Text,
@@ -150,9 +163,18 @@ async function generateResponseOtherMessage(messageSentiment, fullMessageEnglish
         // Create orchestration client using the generated prompt
         const orchestrationClient = await createOrchestrationClient(prompt);
         // Get the response by providing the required input parameters
-        const response = await orchestrationClient.chatCompletion({
-            inputParams: { messageType, fullMessageEnglishAndImageDescription, soContext }
-        });
+
+
+        let response;
+        if (imageLLMDescription)  
+            response = await orchestrationClient.chatCompletion({
+                inputParams: { messageType, fullMessageCustomerLanguage, imageLLMDescription, soContext  }
+            });
+        else 
+            response = await orchestrationClient.chatCompletion({
+                inputParams: { messageType, fullMessageCustomerLanguage, soContext  }
+            });
+
         // Parse and return the generated response in JSON format
         return JSON.parse(response.getContent());
     } catch (error) {

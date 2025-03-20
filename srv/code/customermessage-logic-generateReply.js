@@ -29,7 +29,7 @@ module.exports = async function (request) {
 		request.reject(500, `Failed to retrieve customer message with ID ${ID}`);
 	}
 
-	const { messageCategory, messageSentiment, fullMessageEnglish, imageAboutFreezers, imageMatchingUserDescription, imageLLMDescription, S4HCP_ServiceOrder_ServiceOrder: attachedSOId } = customerMessage;
+	const { messageCategory, messageSentiment, fullMessageEnglish, fullMessageCustomerLanguage, imageAboutFreezers, imageMatchingUserDescription, imageLLMDescription, S4HCP_ServiceOrder_ServiceOrder: attachedSOId } = customerMessage;
 
 	// Use Sales order data as part of the context of the response if available
 	let soContext = '';
@@ -101,7 +101,7 @@ module.exports = async function (request) {
 		const faqItem = (relevantFAQs && relevantFAQs.length > 0) ? relevantFAQs[0] : { issue: '', question: '', answer: '' };
 		try {
 			// Generate a response for the technical message using the FAQ item and service order context
-			resultJSON = await generateResponseTechMessage(faqItem.issue, faqItem.question, faqItem.answer, customerInputContext, soContext);
+			resultJSON = await generateResponseTechMessage(faqItem.issue, faqItem.question, faqItem.answer, fullMessageCustomerLanguage, imageLLMDescription, soContext);
 		} catch (error) {
 			LOG.error('Completion service failed', error);
 			request.reject(500, "Completion service failed");
@@ -109,7 +109,7 @@ module.exports = async function (request) {
 	} else {
 		try {
 			// Generate response for non-technical messages, including service order context
-			resultJSON = await generateResponseOtherMessage(messageSentiment, customerInputContext, soContext);
+			resultJSON = await generateResponseOtherMessage(messageSentiment, fullMessageCustomerLanguage, imageLLMDescription, soContext);
 		} catch (error) {
 			LOG.error('Completion service failed', error);
 			request.reject(500, "Completion service failed");
