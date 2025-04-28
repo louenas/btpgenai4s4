@@ -1,58 +1,48 @@
-using { S4HCP_ServiceOrder_Odata } from './external/S4HCP_ServiceOrder_Odata.cds';
+using {S4HCP_ServiceOrder_Odata} from './external/S4HCP_ServiceOrder_Odata.cds';
+using {btpgenai4s4 as my} from '../db/schema.cds';
 
-using { btpgenai4s4 as my } from '../db/schema.cds';
-
-@path : '/service/btpgenai4s4'
-service btpgenai4s4Srv
-{
+@path: '/service/btpgenai4s4'
+service btpgenai4s4Srv {
     @odata.draft.enabled
-    entity CustomerMessages as
-        projection on my.CustomerMessage
-        actions
-        {
-            @cds.odata.bindingparameter.name : '_it'
-            @Common.SideEffects : 
-            {
-                TargetProperties :
-                [
+    entity CustomerMessages as projection on my.CustomerMessage
+        actions {
+            @(
+                cds.odata.bindingparameter.name: '_it',
+                Common.SideEffects             : {TargetProperties: [
                     '_it/suggestedResponseEnglish',
                     '_it/suggestedResponseCustomerLanguage'
-                ]
-            }
-            action Action1
-            (
-            );
+                ]}
+            )
+            action Action1();
 
             @(
-            cds.odata.bindingparameter.name: '_it',
-            Common.SideEffects: {TargetProperties: ['_it/S4HCP_ServiceOrder_ServiceOrder']}
+                cds.odata.bindingparameter.name: '_it',
+                Common.SideEffects             : {TargetProperties: [
+                    '_it/S4HCP_ServiceOrder_ServiceOrder',
+                    '_it/suggestedResponseEnglish'
+                ]}
             )
-            action Action2
-            (
-            );
+            action Action2();
         };
 
-    entity A_ServiceOrder as
-        projection on S4HCP_ServiceOrder_Odata.A_ServiceOrder
-        {
+    entity A_ServiceOrder   as
+        projection on S4HCP_ServiceOrder_Odata.A_ServiceOrder {
             ServiceOrder,
             ServiceOrderDescription
         };
 
     @odata.draft.enabled
-    entity ProductFAQ as
-        projection on my.ProductFAQ
-        {
+    entity ProductFAQ       as
+        projection on my.ProductFAQ {
             ID,
             issue,
             question,
             answer
         };
 
-        @odata.draft.enabled
-    entity ReportMessage as
-        projection on my.CustomerMessage
-        {
+    @odata.draft.enabled
+    entity ReportMessage    as
+        projection on my.CustomerMessage {
             ID,
             customerMessageID,
             customerName,
@@ -67,7 +57,4 @@ service btpgenai4s4Srv
         };
 }
 
-annotate btpgenai4s4Srv with @requires :
-[
-    'authenticated-user'
-];
+annotate btpgenai4s4Srv with @requires: ['authenticated-user'];

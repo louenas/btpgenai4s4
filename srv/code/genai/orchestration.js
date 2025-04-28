@@ -25,9 +25,6 @@ async function createOrchestrationClient(prompt) {
                 SYSTEM_MESSAGE,
                 { role: 'user', content: prompt }
             ]
-        },
-        filtering: {
-            input: buildAzureContentFilter({ SelfHarm: 0 })
         }
     });
 }
@@ -56,9 +53,6 @@ async function createOrchestrationClientForImageAnalysis(prompt) {
                     ]
                 }
             ]
-        },
-        filtering: {
-            input: buildAzureContentFilter({ SelfHarm: 0 })
         }
     });
 }
