@@ -68,6 +68,10 @@ annotate service.CustomerMessages with @(
             {
                 $Type : 'UI.DataField',
                 Value : fullMessageEnglish,
+            },            {
+                $Type : 'UI.DataField',
+                Value : imageAboutFreezers,
+                Label : 'imageAboutFreezers',
             },
             {
                 $Type : 'UI.DataField',
