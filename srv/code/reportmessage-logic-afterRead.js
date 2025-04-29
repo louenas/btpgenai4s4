@@ -77,31 +77,29 @@ module.exports = async function (results, request) {
 		// Analyze the Base64 image and retrieve description data
 		let { imageAboutFreezers, imageMatchingUserDescription, imageLLMDescription } = imageInterpResultJSON;
 
-		// Validate the image analysis results
-		if (!imageAboutFreezers) {
-			const message = `Incomplete response from completion service when processing issue image for the CustomerMessage ID ${ID}`;
-			LOG.error(message);
+		// Update the message if the image is valid and matches the description
+		try {
+			await UPDATE('btpgenai4s4.CustomerMessage')
+				.set({ imageAboutFreezers, imageMatchingUserDescription, imageLLMDescription })
+				.where({ ID });
+			const message = `CustomerMessage with ID ${ID} created and generated data inserted`;
+			LOG.info(message);
+		} catch (error) {
+			const message = `Error updating CustomerMessage ID ${ID}`;
+			LOG.error(message, error.message);
 			request.warn(message);
 			return;
 		}
 
-		// Update the message if the image is valid and matches the description
 		if (imageAboutFreezers === "yes" && imageMatchingUserDescription === "yes") {
-			try {
-				await UPDATE('btpgenai4s4.CustomerMessage')
-					.set({ imageAboutFreezers, imageMatchingUserDescription, imageLLMDescription })
-					.where({ ID });
-				const message = `CustomerMessage with ID ${ID} created and generated data inserted`;
-				LOG.info(message);
-			} catch (error) {
-				const message = `Error updating CustomerMessage ID ${ID}`;
-				LOG.error(message, error.message);
-				request.warn(message);
-				return;
-			}
+			// Reject if the image does not match expectations
+			const message = "The image sent is not about freezers or the image and matching the issue description";
+			LOG.error(message);
+			request.info(message);
+			return;
 		} else {
 			// Reject if the image does not match expectations
-			const message = "The image you sent is not about freezers or the image is not matching the issue description";
+			const message = "The image sent is not about freezers or the image is not matching the issue description";
 			LOG.error(message);
 			request.warn(message);
 			return;
