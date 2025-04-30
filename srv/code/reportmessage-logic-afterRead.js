@@ -93,13 +93,13 @@ module.exports = async function (results, request) {
 
 		if (imageAboutFreezers === "yes" && imageMatchingUserDescription === "yes") {
 			// Reject if the image does not match expectations
-			const message = "The image sent is not about freezers or the image and matching the issue description";
+			const message = "The image sent is about freezers and matching the issue description";
 			LOG.error(message);
 			request.info(message);
 			return;
 		} else {
 			// Reject if the image does not match expectations
-			const message = "The image sent is not about freezers or the image is not matching the issue description";
+			const message = "The image sent is either not about freezers or not matching the issue description";
 			LOG.error(message);
 			request.warn(message);
 			return;
