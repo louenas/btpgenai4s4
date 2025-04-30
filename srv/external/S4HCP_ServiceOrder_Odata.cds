@@ -13,7 +13,7 @@ service S4HCP_ServiceOrder_Odata {};
 entity S4HCP_ServiceOrder_Odata.A_ServiceOrder {
   @sap.display.format : 'UpperCase'
   @sap.label : 'Transaction ID'
-  key ServiceOrder : String(10) not null;
+  key ServiceOrder : String(10);
   @sap.display.format : 'UpperCase'
   @sap.label : 'Transaction Type'
   @sap.quickinfo : 'Business Transaction Type'
