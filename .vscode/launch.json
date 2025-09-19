@@ -4,8 +4,8 @@
     {
       "name": "Run btpgenai4s4",
       "runtimeExecutable": "cds",
-      "killBehavior": "polite",
       "request": "launch",
+      "killBehavior": "polite",
       "args": [
         "watch",
         "--open"
@@ -18,7 +18,7 @@
       "envFile": "${workspaceFolder}/env/.env1",
       "env": {
         "run.config": "{\"handlerId\":\"lcap_run_config_handler_id\",\"runnableId\":\"{\\\"projectPath\\\":\\\"/home/user/projects/btpgenai4s4\\\",\\\"profileName\\\":\\\"\\\"}\"}",
-        "runConfigurations": "{\"odataBinding\":{\"S4HCP_ServiceOrder_Odata\":{\"destination\":\"S4HCP-ServiceOrder-Odata\",\"type\":\"Destination\",\"path\":\"\"}}}"
+        "runConfigurations": "{\"dbBinding\":{\"type\":\"SAP HANA Cloud\",\"dbName\":\"BTPGenAI4S4-Trainer-HDI-01\"},\"odataBinding\":{\"S4HCP_ServiceOrder_Odata\":{\"destination\":\"S4HCP-ServiceOrder-Odata\",\"type\":\"Destination\",\"path\":\"\"}}}"
       }
     }
   ]

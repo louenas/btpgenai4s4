@@ -32,20 +32,6 @@
       }
     },
     {
-      "label": "npm-install",
-      "type": "process",
-      "command": "npm",
-      "args": [
-        "install"
-      ],
-      "dependsOn": [
-        "checkPort4004"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}/"
-      }
-    },
-    {
       "label": "BuildMDK",
       "type": "process",
       "command": "npx",
@@ -65,6 +51,44 @@
       }
     },
     {
+      "label": "kill-cds-processes",
+      "type": "shell",
+      "command": "pids=$(ps aux | grep -vE 'grep|bash' | grep 'cds.js' | awk '{print $2}'); if [ -n \"$pids\" ]; then kill $pids; fi",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      }
+    },
+    {
+      "label": "npm-install",
+      "type": "process",
+      "command": "npm",
+      "args": [
+        "install"
+      ],
+      "dependsOn": [
+        "kill-cds-processes"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "BuildMDK",
+      "type": "shell",
+      "command": "if npm list @sap/mdk-tools --depth=0 > /dev/null 2>&1; then npx mdk build --target module --ui5 --recursive;fi",
+      "dependsOn": [
+        "npm-install"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
       "label": "dev-project",
       "type": "process",
       "command": "npx",
@@ -76,7 +100,7 @@
         "BuildMDK"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/"
+        "cwd": "${workspaceFolder}"
       }
     },
     {
@@ -85,14 +109,11 @@
       "command": "npx",
       "args": [
         "dev-cap-tools",
-        "gen-entrypoint",
-        "--ui5version",
-        "1.131.1",
-        "--ui5theme",
-        "sap_fiori_3"
+        "gen-entrypoint"
       ],
       "dependsOn": [
-        "BuildMDK"
+        "BuildMDK",
+        "DeployToHANADB:.env1"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
