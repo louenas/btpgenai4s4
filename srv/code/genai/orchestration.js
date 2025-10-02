@@ -3,8 +3,8 @@ const LOG = cds.log('GenAI');
 
 // Configuration object for the LLM, specifying model name and parameters.
 const LLM_CONFIG = {
-    model_name: 'gpt-4o-mini',
-    model_params: {
+    name: 'gpt-4o-mini',
+    params: {
         temperature: 0.1,
         response_format: {
             type: 'json_object',
@@ -17,48 +17,56 @@ const SYSTEM_MESSAGE = { role: 'system', content: 'You are a support agent for o
 
 // Function to create an orchestration client using the specified prompt.
 async function createOrchestrationClient(prompt) {
-    const { OrchestrationClient, buildAzureContentFilter } = await import('@sap-ai-sdk/orchestration');
+    const { OrchestrationClient, buildAzureContentSafetyFilter } = await import('@sap-ai-sdk/orchestration');
     return new OrchestrationClient({
-        llm: LLM_CONFIG,
-        templating: {
-            template: [
-                SYSTEM_MESSAGE,
-                { role: 'user', content: prompt }
-            ]
+        promptTemplating: {
+            model: LLM_CONFIG,
+            prompt: {
+                template: [
+                    SYSTEM_MESSAGE,
+                    { role: 'user', content: prompt }
+                ]
+            }
         },
         filtering: {
-            input: buildAzureContentFilter({ SelfHarm: 0 })
+            input: {
+                filters: [buildAzureContentSafetyFilter('input', { self_harm: 0 })]
+            }
         }
     });
 }
 
 // Function to create an orchestration client for image analysis using the specified prompt.
 async function createOrchestrationClientForImageAnalysis(prompt) {
-    const { OrchestrationClient, buildAzureContentFilter } = await import('@sap-ai-sdk/orchestration');
+    const { OrchestrationClient, buildAzureContentSafetyFilter } = await import('@sap-ai-sdk/orchestration');
     return new OrchestrationClient({
-        llm: LLM_CONFIG,
-        templating: {
-            template: [
-                SYSTEM_MESSAGE,
-                {
-                    role: 'user',
-                    content: [
-                        {
-                            type: 'text',
-                            text: `${prompt}`,
-                        },
-                        {
-                            type: 'image_url',
-                            image_url: {
-                                url: '{{?imageUrl}}'
+        promptTemplating: {
+            model: LLM_CONFIG,
+            prompt: {
+                template: [
+                    SYSTEM_MESSAGE,
+                    {
+                        role: 'user',
+                        content: [
+                            {
+                                type: 'text',
+                                text: `${prompt}`,
+                            },
+                            {
+                                type: 'image_url',
+                                image_url: {
+                                    url: '{{?imageUrl}}'
+                                }
                             }
-                        }
-                    ]
-                }
-            ]
+                        ]
+                    }
+                ]
+            }
         },
         filtering: {
-            input: buildAzureContentFilter({ SelfHarm: 0 })
+            input: {
+                filters: [buildAzureContentSafetyFilter('input', { self_harm: 0 })]
+            }
         }
     });
 }
@@ -93,7 +101,10 @@ async function preprocessCustomerMessage(titleCustomerLanguage, fullMessageCusto
     try {
         const orchestrationClient = await createOrchestrationClient(prompt);
         const response = await orchestrationClient.chatCompletion({
-            inputParams: { titleCustomerLanguage, fullMessageCustomerLanguage }
+            placeholderValues: {
+                titleCustomerLanguage,
+                fullMessageCustomerLanguage
+            }
         });
         return JSON.parse(response.getContent());
     } catch (error) {
@@ -125,10 +136,24 @@ async function generateResponseTechMessage(issue, question, answer, fullMessageC
         let response;
         if (imageLLMDescription)  
             response = await orchestrationClient.chatCompletion({
-            inputParams: { issue, question, answer, fullMessageCustomerLanguage, imageLLMDescription, soContext }});
+                placeholderValues: {
+                    issue,
+                    question,
+                    answer,
+                    fullMessageCustomerLanguage,
+                    imageLLMDescription,
+                    soContext
+                }
+            });
         else 
             response = await orchestrationClient.chatCompletion({
-            inputParams: { issue, question, answer, fullMessageCustomerLanguage, soContext }
+                placeholderValues: {
+                    issue,
+                    question,
+                    answer,
+                    fullMessageCustomerLanguage,
+                    soContext
+                }
             });
 
         // Parse and return the generated response in JSON format
@@ -168,11 +193,20 @@ async function generateResponseOtherMessage(messageSentiment, fullMessageCustome
         let response;
         if (imageLLMDescription)  
             response = await orchestrationClient.chatCompletion({
-                inputParams: { messageType, fullMessageCustomerLanguage, imageLLMDescription, soContext  }
+                placeholderValues: {
+                    messageType,
+                    fullMessageCustomerLanguage,
+                    imageLLMDescription,
+                    soContext
+                }
             });
         else 
             response = await orchestrationClient.chatCompletion({
-                inputParams: { messageType, fullMessageCustomerLanguage, soContext  }
+                placeholderValues: {
+                    messageType,
+                    fullMessageCustomerLanguage,
+                    soContext
+                }
             });
 
         // Parse and return the generated response in JSON format
@@ -196,7 +230,10 @@ async function analyseImage(imageBase64, customerIssueDescription) {
     const orchestrationClient = await createOrchestrationClientForImageAnalysis(prompt);
 
     const response = await orchestrationClient.chatCompletion({
-        inputParams: { imageUrl: 'data:image/jpeg;base64,' + imageBase64, customerIssueDescription }
+        placeholderValues: {
+            imageUrl: 'data:image/jpeg;base64,' + imageBase64,
+            customerIssueDescription
+        }
     });
 
     return JSON.parse(response.getContent());
