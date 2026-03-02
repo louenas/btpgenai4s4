@@ -1,0 +1,66 @@
+{
+  "name": "YourName_Number_StudentID",
+  "version": "1.0.0",
+  "description": "A simple CAP project.",
+  "dependencies": {
+    "@cap-js/hana": "^2",
+    "@sap-ai-sdk/foundation-models": "^2.7.0",
+    "@sap-ai-sdk/orchestration": "^2.7.0",
+    "@sap-cloud-sdk/http-client": "^4.5.1",
+    "@sap-cloud-sdk/util": "^4.5.1",
+    "@sap/cds": "^9",
+    "@sap/low-code-event-handler": "^1.2.5",
+    "@sap/xsenv": ">=3.3.2 <3.3.3",
+    "@sap/xssec": "^4.12.2",
+    "express": "^4",
+    "hdb": "^2.27.1",
+    "passport": "^0.7.0",
+    "@sap-cloud-sdk/connectivity": "^4",
+    "@sap-cloud-sdk/resilience": "^4"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^2",
+    "@sap/dev-cap-tools": "^1.31.0"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "start-local": "npm run generate-entry-point && npm run cds-watch",
+    "generate-entry-point": "dev-cap-tools gen-entrypoint",
+    "cds-watch": "cds watch --open",
+    "watch-yourname_number_studentid.customermessages": "cds watch --open yourname_number_studentid.customermessages/webapp/index.html?sap-ui-xx-viewCache=false",
+    "watch-yourname_number_studentid.productfaqapplication": "cds watch --open yourname_number_studentid.productfaqapplication/webapp/index.html?sap-ui-xx-viewCache=false"
+  },
+  "private": true,
+  "cds": {
+    "requires": {
+      "[production]": {
+        "db": "hana",
+        "auth": "xsuaa"
+      },
+      "auth": {
+        "[development]": {
+          "kind": "dummy"
+        },
+        "[production]": {
+          "kind": "xsuaa"
+        }
+      },
+      "S4HCP_ServiceOrder_Odata": {
+        "kind": "odata-v2",
+        "model": "srv/external/S4HCP_ServiceOrder_Odata",
+        "[production]": {
+          "credentials": {
+            "destination": "S4HCP-ServiceOrder-Odata"
+          }
+        },
+        "csrf": true,
+        "csrfInBatch": true
+      }
+    }
+  },
+  "lcap": true,
+  "sapux": [
+    "app/yourname_number_studentid.customermessages",
+    "app/yourname_number_studentid.productfaqapplication"
+  ]
+}
